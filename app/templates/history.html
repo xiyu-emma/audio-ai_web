@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>分析歷史紀錄</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            margin: 2em; 
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: white;
+            padding: 2em;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 1.5em;
+        }
+        th, td { 
+            border: 1px solid #dee2e6; 
+            padding: 12px; 
+            text-align: left; 
+            vertical-align: middle;
+        }
+        th { 
+            background-color: #f2f2f2; 
+        }
+        a { 
+            color: #007bff; 
+            text-decoration: none; 
+        }
+        a:hover { 
+            text-decoration: underline; 
+        }
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5em;
+            padding-bottom: 1.5em;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .nav-link a, .sort-options a {
+            margin-right: 15px;
+        }
+        .sort-options .active { 
+            font-weight: bold; 
+            color: black; 
+            text-decoration: none; 
+        }
+        .submit-container {
+            text-align: right;
+            margin-top: 20px;
+        }
+        .submit-btn {
+            padding: 10px 20px;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: background-color 0.2s;
+        }
+        .train-btn { background-color: #17a2b8; }
+        .train-btn:hover { background-color: #138496; }
+        .delete-btn { background-color: #dc3545; }
+        .delete-btn:hover { background-color: #c82333; }
+        .status-PENDING { color: #6c757d; }
+        .status-COMPLETED { color: #28a745; font-weight: bold; }
+        .status-FAILED { color: #dc3545; font-weight: bold; }
+        .disabled-link { color: #6c757d; text-decoration: none; pointer-events: none; }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+            height: 24px;
+            display: flex;
+            align-items: center;
+        }
+        .progress-bar {
+            background-color: #007bff;
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: #333;
+            font-weight: bold;
+            font-size: 0.9em;
+            line-height: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" data-new-upload-id="{{ request.args.get('new_upload_id') }}">
+        <h1>分析歷史紀錄</h1>
+
+        <div class="header-controls">
+            <div class="nav-link">
+                <a href="{{ url_for('main.index') }}">&larr; 返回上傳頁面</a>
+                <a href="{{ url_for('main.training_status') }}">查看訓練任務 &rarr;</a>
+            </div>
+            <div class="sort-options">
+                <span>排序方式：</span>
+                <a href="{{ url_for('main.history', sort='desc') }}" class="{{ 'active' if current_sort == 'desc' else '' }}">由新到舊</a>
+                <a href="{{ url_for('main.history', sort='asc') }}" class="{{ 'active' if current_sort == 'asc' else '' }}">由舊到新</a>
+            </div>
+        </div>
+
+        <form id="history-form" method="post">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 3%;"><input type="checkbox" onclick="toggleAll(this)"></th>
+                        <th style="width: 5%;">ID</th>
+                        <th>原始檔案名稱</th>
+                        <th style="width: 15%;">狀態</th>
+                        <th style="width: 15%;">分析時間</th>
+                        <th style="width: 20%;">參數</th>
+                        <th style="width: 10%;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for upload in uploads %}
+                    <tr id="upload-row-{{ upload.id }}">
+                        <td><input type="checkbox" name="upload_ids" value="{{ upload.id }}" class="upload-checkbox"></td>
+                        <td>{{ upload.id }}</td>
+                        <td>{{ upload.original_filename }}</td>
+                        <td class="status-cell">
+                            {% if upload.status == 'PROCESSING' %}
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" style="width: {{ upload.progress }}%;"></div>
+                                    <span class="progress-text">{{ upload.progress }}%</span>
+                                </div>
+                            {% else %}
+                                <span class="status-text status-{{ upload.status }}">{{ upload.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ upload.upload_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            <ul>
+                            {% for key, value in upload.get_params().items() %}
+                                <li><strong>{{ key }}:</strong> {{ value }}</li>
+                            {% endfor %}
+                            </ul>
+                        </td>
+                        <td class="action-cell">
+                            {% if upload.status == 'COMPLETED' %}
+                                <a href="{{ url_for('main.results', upload_id=upload.id) }}">查看結果</a>
+                            {% else %}
+                                <span class="disabled-link">查看結果</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="submit-container">
+                <button type="button" class="submit-btn train-btn" onclick="submitTraining()">使用選取的紀錄開始訓練</button>
+                <button type="button" class="submit-btn delete-btn" onclick="submitDeletion()">刪除選取項目</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function toggleAll(source) {
+            checkboxes = document.getElementsByClassName('upload-checkbox');
+            for (let i = 0; i < checkboxes.length; i++) {
+                checkboxes[i].checked = source.checked;
+            }
+        }
+
+        function getSelectedIds() {
+            return Array.from(document.querySelectorAll('.upload-checkbox:checked')).map(cb => cb.value);
+        }
+
+        function submitTraining() {
+            const selectedIds = getSelectedIds();
+            if (selectedIds.length === 0) {
+                alert('請至少選取一個項目來進行訓練。');
+                return;
+            }
+            const form = document.getElementById('history-form');
+            form.action = "{{ url_for('main.start_training') }}";
+            form.submit();
+        }
+
+        function submitDeletion() {
+            const selectedIds = getSelectedIds();
+            if (selectedIds.length === 0) {
+                alert('請至少選取一個項目進行刪除。');
+                return;
+            }
+            if (confirm(`您確定要刪除選取的 ${selectedIds.length} 個項目嗎？所有相關檔案將被永久移除。`)) {
+                const form = document.getElementById('history-form');
+                form.action = "{{ url_for('main.delete_selected_uploads') }}";
+                form.submit();
+            }
+        }
+
+        // --- 動態更新邏輯 (已移除時間轉換部分) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const activeIntervals = new Map();
+            const container = document.querySelector('.container');
+            const newUploadId = container.dataset.newUploadId;
+
+            if (newUploadId) {
+                const newRow = document.getElementById(`upload-row-${newUploadId}`);
+                if (newRow) {
+                    const statusCell = newRow.querySelector('.status-cell');
+                    const statusText = statusCell.querySelector('.status-text');
+
+                    if (statusText && statusText.classList.contains('status-PENDING')) {
+                        statusCell.innerHTML = `
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 0%;"></div>
+                                <span class="progress-text">0%</span>
+                            </div>
+                        `;
+                    }
+                    startPolling(newUploadId);
+                }
+            }
+            
+            const rowsToUpdate = document.querySelectorAll('tr[id^="upload-row-"]');
+            rowsToUpdate.forEach(row => {
+                const uploadId = row.id.split('-')[2];
+                if (uploadId === newUploadId) return;
+
+                const statusCell = row.querySelector('.status-cell');
+                if (statusCell.querySelector('.progress-bar')) {
+                    startPolling(uploadId);
+                }
+            });
+
+            function startPolling(uploadId) {
+                if (activeIntervals.has(uploadId)) return;
+
+                const intervalId = setInterval(() => {
+                    fetch(`/api/upload/${uploadId}/status`)
+                        .then(response => {
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            return response.json();
+                        })
+                        .then(data => updateRow(data))
+                        .catch(error => {
+                            console.error(`Error fetching status for upload ${uploadId}:`, error);
+                            stopPolling(uploadId);
+                        });
+                }, 3000);
+
+                activeIntervals.set(uploadId, intervalId);
+            }
+
+            function stopPolling(uploadId) {
+                if (activeIntervals.has(uploadId)) {
+                    clearInterval(activeIntervals.get(uploadId));
+                    activeIntervals.delete(uploadId);
+                }
+            }
+
+            function updateRow(data) {
+                const row = document.getElementById(`upload-row-${data.id}`);
+                if (!row) return;
+
+                const statusCell = row.querySelector('.status-cell');
+                
+                if (data.status === 'PROCESSING') {
+                    const progressBar = statusCell.querySelector('.progress-bar');
+                    const progressText = statusCell.querySelector('.progress-text');
+                    if(progressBar) progressBar.style.width = `${data.progress}%`;
+                    if(progressText) progressText.textContent = `${data.progress}%`;
+                } else {
+                    stopPolling(data.id);
+                    
+                    const newStatusText = document.createElement('span');
+                    newStatusText.className = `status-text status-${data.status}`;
+                    newStatusText.textContent = data.status;
+                    statusCell.innerHTML = '';
+                    statusCell.appendChild(newStatusText);
+                    
+                    if (data.status === 'COMPLETED') {
+                        const actionCell = row.querySelector('.action-cell');
+                        actionCell.innerHTML = `<a href="/results/${data.id}">查看結果</a>`;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>模型訓練狀態</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 2em; background-color: #f8f9fa; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5em; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: middle; }
+        th { background-color: #f2f2f2; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .nav-link { margin-bottom: 20px; }
+        .status-PENDING { color: #6c757d; }
+        .status-SUCCESS { color: #28a745; font-weight: bold; }
+        .status-FAILURE { color: #dc3545; font-weight: bold; }
+        .action-links a { margin-right: 10px; }
+        
+        .submit-container { text-align: right; margin-top: 20px; }
+        .submit-btn {
+            padding: 10px 20px; color: white; text-decoration: none;
+            border-radius: 5px; font-size: 16px; border: none;
+            cursor: pointer; transition: background-color 0.2s;
+        }
+        .delete-btn { background-color: #dc3545; }
+        .delete-btn:hover { background-color: #c82333; }
+        
+        /* --- 進度條樣式 --- */
+        .progress-bar-container {
+            width: 100%; background-color: #e9ecef; border-radius: 5px;
+            overflow: hidden; position: relative; height: 24px;
+            display: flex; align-items: center;
+        }
+        .progress-bar {
+            background-color: #17a2b8; height: 100%; width: 0%;
+            transition: width 0.4s ease;
+        }
+        .progress-text {
+            position: absolute; width: 100%; text-align: center;
+            color: #333; font-weight: bold; font-size: 0.9em;
+            line-height: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" data-new-run-id="{{ request.args.get('new_run_id') }}">
+        <h1>模型訓練狀態</h1>
+        <div class="nav-link">
+            <a href="{{ url_for('main.history') }}">&larr; 返回歷史紀錄頁面</a>
+        </div>
+
+        <form id="training-form" method="post">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 3%;"><input type="checkbox" onclick="toggleAll(this)"></th>
+                        <th style="width: 5%;">任務 ID</th>
+                        <th style="width: 18%;">開始時間</th>
+                        <th style="width: 20%;">狀態</th>
+                        <th>結果與下載</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in runs %}
+                    <tr id="run-row-{{ run.id }}">
+                        <td><input type="checkbox" name="run_ids" value="{{ run.id }}" class="run-checkbox"></td>
+                        <td>{{ run.id }}</td>
+                        <td>{{ run.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td class="status-cell">
+                            {% if run.status == 'RUNNING' %}
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" style="width: {{ run.progress }}%;"></div>
+                                    <span class="progress-text">{{ run.progress }}%</span>
+                                </div>
+                            {% else %}
+                                <span class="status-text status-{{ run.status }}">{{ run.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="action-cell action-links">
+                            {% if run.status == 'SUCCESS' %}
+                                <a href="{{ url_for('main.training_report', run_id=run.id) }}">查看詳細報告</a>
+                                <a href="{{ url_for('static', filename=run.results_path + '/weights/best.pt') }}" download>下載模型 (.pt)</a>
+                            {% elif run.status == 'FAILURE' %}
+                                <span>訓練失敗</span>
+                            {% else %}
+                                <span>--</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center;">目前沒有任何訓練任務。</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="submit-container">
+                <button type="button" class="submit-btn delete-btn" onclick="submitDeletion()">刪除選取項目</button>
+            </div>
+        </form>
+    </div>
+
+<script>
+    function toggleAll(source) {
+        const checkboxes = document.getElementsByClassName('run-checkbox');
+        for (let i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = source.checked;
+        }
+    }
+
+    function submitDeletion() {
+        const selectedIds = Array.from(document.querySelectorAll('.run-checkbox:checked')).map(cb => cb.value);
+        if (selectedIds.length === 0) {
+            alert('請至少選取一個項目進行刪除。');
+            return;
+        }
+        if (confirm(`您確定要刪除選取的 ${selectedIds.length} 個訓練任務嗎？所有相關檔案將被永久移除。`)) {
+            const form = document.getElementById('training-form');
+            form.action = "{{ url_for('main.delete_selected_runs') }}";
+            form.submit();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const activeIntervals = new Map();
+        const container = document.querySelector('.container');
+        const newRunId = container.dataset.newRunId;
+
+        if (newRunId) {
+            const newRow = document.getElementById(`run-row-${newRunId}`);
+            if (newRow) {
+                const statusCell = newRow.querySelector('.status-cell');
+                const statusText = statusCell.querySelector('.status-text');
+                if (statusText && statusText.classList.contains('status-PENDING')) {
+                    statusCell.innerHTML = `
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: 0%;"></div>
+                            <span class="progress-text">0%</span>
+                        </div>
+                    `;
+                }
+                startPolling(newRunId);
+            }
+        }
+
+        document.querySelectorAll('tr[id^="run-row-"]').forEach(row => {
+            const runId = row.id.split('-')[2];
+            if (runId === newRunId) return;
+            if (row.querySelector('.progress-bar')) {
+                startPolling(runId);
+            }
+        });
+
+        function startPolling(runId) {
+            if (activeIntervals.has(runId)) return;
+            const intervalId = setInterval(() => {
+                fetch(`/api/training/${runId}/status`)
+                    .then(response => response.ok ? response.json() : Promise.reject('Network error'))
+                    .then(data => updateRow(data))
+                    .catch(error => {
+                        console.error(`Error fetching status for run ${runId}:`, error);
+                        stopPolling(runId);
+                    });
+            }, 3000); 
+            activeIntervals.set(runId, intervalId);
+        }
+
+        function stopPolling(runId) {
+            if (activeIntervals.has(runId)) {
+                clearInterval(activeIntervals.get(runId));
+                activeIntervals.delete(runId);
+            }
+        }
+
+        function updateRow(data) {
+            const row = document.getElementById(`run-row-${data.id}`);
+            if (!row) return;
+
+            const statusCell = row.querySelector('.status-cell');
+            if (data.status === 'RUNNING') {
+                const progressBar = statusCell.querySelector('.progress-bar');
+                const progressText = statusCell.querySelector('.progress-text');
+                if (progressBar) progressBar.style.width = `${data.progress}%`;
+                if (progressText) progressText.textContent = `${data.progress}%`;
+            } else {
+                stopPolling(data.id);
+                statusCell.innerHTML = `<span class="status-text status-${data.status}">${data.status}</span>`;
+                
+                const actionCell = row.querySelector('.action-cell');
+                if (data.status === 'SUCCESS') {
+                    actionCell.innerHTML = `
+                        <a href="/training/report/${data.id}">查看詳細報告</a>
+                        <a href="/static/training_runs/${data.id}/train_results/weights/best.pt" download>下載模型 (.pt)</a>
+                    `;
+                } else if (data.status === 'FAILURE') {
+                    actionCell.innerHTML = '<span>訓練失敗</span>';
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>
+
