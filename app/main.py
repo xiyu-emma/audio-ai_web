@@ -1,13 +1,14 @@
 import os
 import json
 import shutil
-from datetime import datetime
-from flask import (
-    Blueprint, current_app, render_template, request, redirect, url_for, jsonify, Response
-)
-from werkzeug.utils import secure_filename
 import csv
 import io
+import zipfile
+from datetime import datetime
+from flask import (
+    Blueprint, current_app, render_template, request, redirect, url_for, jsonify, send_file
+)
+from werkzeug.utils import secure_filename
 
 # 從 __init__.py 引入 db 和 celery 實例
 from . import db, celery
@@ -66,6 +67,113 @@ def labeling_page(upload_id):
     )
     return render_template('label.html', upload=upload_record, pagination=pagination)
 
+# --- 下載功能路由 (本次新增) ---
+
+# 修改 app/main.py
+
+@main_bp.route('/download_dataset_zip/<int:upload_id>')
+def download_dataset_zip(upload_id):
+    """
+    將指定 upload_id 的結果資料夾打包成 ZIP。
+    
+    修改重點：
+    1. 【過濾檔案】：只打包「訓練用頻譜圖 (無座標)」和「音訊檔」，排除「顯示用頻譜圖 (有座標)」。
+    2. 【分流存放】：圖片存入 images/，音訊存入 audio/。
+    3. 【CSV 內容】：包含 filename (路徑), label_name, time_segment (時間段)。
+    """
+    upload = Upload.query.get_or_404(upload_id)
+    
+    # 確保按順序取出，以便計算時間
+    results = Result.query.filter_by(upload_id=upload_id).order_by(Result.id).all()
+    
+    folder_path = os.path.join(current_app.root_path, 'static', upload.result_path)
+    if not os.path.exists(folder_path):
+        return "找不到結果資料夾，無法下載。", 404
+
+    # --- 1. 計算時間參數 ---
+    params = upload.get_params()
+    try:
+        segment_duration = float(params.get('segment_duration', 2.0))
+        overlap_percent = float(params.get('overlap', 50))
+        hop_length = segment_duration * (1 - overlap_percent / 100.0)
+    except (ValueError, TypeError):
+        segment_duration = 2.0
+        hop_length = 1.0
+
+    def format_time(seconds):
+        m = int(seconds // 60)
+        s = seconds % 60
+        return f"{m:02d}:{s:06.3f}"
+
+    memory_file = io.BytesIO()
+
+    try:
+        with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+            # --- A. 加入實體檔案 (加入過濾邏輯) ---
+            for root, dirs, files in os.walk(folder_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    filename_lower = file.lower()
+                    
+                    # 邏輯判斷：決定是否要打包此檔案
+                    should_include = False
+                    arcname = file
+                    
+                    # 情況 1: 是音訊檔 -> 保留
+                    if filename_lower.endswith(('.wav', '.mp3')):
+                        arcname = f"audio/{file}"
+                        should_include = True
+                    
+                    # 情況 2: 是圖片檔，且是「訓練用」圖檔 (包含 _spec_training_) -> 保留
+                    # audio_utils.py 產生的檔名格式為: {basename}_spec_training_{i}.png 
+                    elif filename_lower.endswith(('.png', '.jpg')) and '_spec_training_' in filename_lower:
+                        arcname = f"images/{file}"
+                        should_include = True
+                    
+                    # 情況 3: 是「顯示用」圖檔 (包含 _spec_display_) -> 跳過 (不打包)
+                    elif '_spec_display_' in filename_lower:
+                        should_include = False
+                    
+                    # 執行寫入
+                    if should_include:
+                        zf.write(file_path, arcname)
+            
+            # --- B. 生成 labels.csv ---
+            csv_buffer = io.StringIO()
+            csv_writer = csv.writer(csv_buffer)
+            
+            # 表頭
+            csv_writer.writerow(['filename', 'label_name', 'time_segment'])
+            
+            for i, res in enumerate(results):
+                # 這裡使用的是 spectrogram_training_filename，對應上面過濾保留的圖片 [cite: 2]
+                fname = res.spectrogram_training_filename
+                csv_filename = f"images/{fname}"
+                
+                label_name = res.label.name if res.label else ""
+                
+                # 計算時間
+                start_seconds = i * hop_length
+                end_seconds = start_seconds + segment_duration
+                time_str = f"{format_time(start_seconds)} - {format_time(end_seconds)}"
+                
+                csv_writer.writerow([csv_filename, label_name, time_str])
+            
+            zf.writestr('labels.csv', csv_buffer.getvalue())
+
+        memory_file.seek(0)
+        download_filename = f"dataset_{upload.id}_{secure_filename(upload.original_filename)}.zip"
+
+        return send_file(
+            memory_file,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=download_filename
+        )
+
+    except Exception as e:
+        print(f"打包 ZIP 時發生錯誤: {e}")
+        return f"打包失敗: {e}", 500
 # --- 上傳與背景任務路由 ---
 
 @main_bp.route('/upload', methods=['POST'])
@@ -95,13 +203,17 @@ def upload():
         )
         db.session.add(new_upload)
         db.session.commit()
+        
         upload_id = new_upload.id
         result_dir_name = os.path.join(current_app.root_path, 'static', 'results', str(upload_id))
         os.makedirs(result_dir_name, exist_ok=True)
+        
         new_upload.result_path = os.path.join('results', str(upload_id))
         db.session.commit()
+        
         upload_path = os.path.join(current_app.root_path, current_app.config['UPLOAD_FOLDER'], f"{upload_id}_{filename}")
         file.save(upload_path)
+        
         celery.send_task('app.tasks.process_audio_task', args=[upload_id])
         return redirect(url_for('main.history', new_upload_id=upload_id))
     return redirect(url_for('main.index'))
@@ -276,58 +388,3 @@ def update_result_label(result_id):
     result.label_id = label_id
     db.session.commit()
     return jsonify({'success': True})
-
-@main_bp.route('/labeling/<int:upload_id>/download_csv')
-def download_labels_csv(upload_id):
-    """下載帶有標籤的頻譜圖數據CSV檔案。"""
-    upload_record = Upload.query.get_or_404(upload_id)
-    
-    # 獲取所有結果和標籤
-    results = Result.query.filter_by(upload_id=upload_id).order_by(Result.id.asc()).all()
-    
-    # 創建CSV內容
-    output = io.StringIO()
-    writer = csv.writer(output)
-    
-    # 寫入標題行
-    writer.writerow([
-        'Result_ID', 'Spectrogram_Filename', 'Audio_Filename', 
-        'Label_ID', 'Label_Name', 'Spectrogram_URL', 'Spectrogram_Training_URL'
-    ])
-    
-    # 寫入數據行
-    for result in results:
-        label_name = result.label.name if result.label else ''
-        label_id = result.label_id if result.label_id else ''
-        audio_filename = result.audio_filename if result.audio_filename else ''
-        
-        writer.writerow([
-            result.id,
-            result.spectrogram_filename,
-            audio_filename,
-            label_id,
-            label_name,
-            result.spectrogram_url,
-            result.spectrogram_training_url
-        ])
-    
-    # 創建回應
-    output.seek(0)
-    csv_content = output.getvalue()
-    output.close()
-    
-    # 生成檔案名稱
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    # 確保檔案名稱是安全的
-    safe_filename = secure_filename(upload_record.original_filename)
-    filename = f"spectrogram_labels_{safe_filename}_{upload_id}_{timestamp}.csv"
-    
-    # 創建回應物件
-    response = Response(
-        csv_content,
-        mimetype='text/csv',
-        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
-    )
-    
-    return response
-

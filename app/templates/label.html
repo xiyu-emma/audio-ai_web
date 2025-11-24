@@ -98,7 +98,6 @@
         <div>
             <input type="text" id="new-label-name" placeholder="輸入新標籤名稱">
             <button onclick="addLabel()">新增標籤</button>
-            <button onclick="downloadCSV()" style="background-color: #28a745; margin-left: 10px;">下載CSV檔案</button>
         </div>
         <ul id="label-list" class="label-list"></ul>
     </div>
@@ -228,19 +227,6 @@
             statusElement.textContent = '儲存失敗！';
             statusElement.style.color = 'red';
         }
-    }
-
-    function downloadCSV() {
-        const uploadId = {{ upload.id }};
-        const url = `/labeling/${uploadId}/download_csv`;
-        
-        // 創建一個隱藏的連結來觸發下載
-        const link = document.createElement('a');
-        link.href = url;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     }
 
     function renderLabelList() {

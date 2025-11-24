@@ -10,17 +10,6 @@ celery = Celery(__name__,
                 backend=os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis:6379/0'),
                 include=['app.tasks'])
 
-# vvvvvvvvvvvvvv 這裡是本次修改的地方 vvvvvvvvvvvvvv
-def init_db_command():
-    """
-    一個獨立的函式，用於建立資料庫表格。
-    """
-    print("正在初始化資料庫...")
-    db.create_all()
-    print("資料庫初始化完成。")
-
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 def create_app():
     """
     建立並設定 Flask app 的工廠函式。
@@ -55,15 +44,12 @@ def create_app():
         from . import main
         app.register_blueprint(main.main_bp)
         
-        # vvvvvvvvvvvvvv 這裡是本次修改的地方 vvvvvvvvvvvvvv
-        # 我們將 db.create_all() 從這裡移除
-        # db.create_all() 
-        
-        # 註冊我們新的資料庫初始化指令
-        @app.cli.command("init-db")
-        def init_db_wrapper():
-            init_db_command()
-        # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        try:
+            db.create_all()
+        except Exception as e:
+            # 如果是因為並發建立導致的錯誤 (OperationalError 1684)，可以忽略，因為代表另一個 process 正在建
+            print(f"資料庫表格建立檢查: {e}")
+            pass
 
     # --- 5. 讓 Celery 任務能感知到 Flask 的應用程式上下文 ---
     class FlaskTask(Task):

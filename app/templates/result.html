@@ -114,6 +114,10 @@
         <div class="button-container">
             <a href="{{ url_for('main.history') }}" class="action-button btn-secondary">返回歷史紀錄</a>
             <a href="{{ url_for('main.index') }}" class="action-button btn-primary">返回上傳頁面</a>
+            
+            <a href="{{ url_for('main.download_dataset_zip', upload_id=upload.id) }}" class="action-button" style="background-color: #17a2b8;">
+                下載訓練集
+            </a>
             <a href="{{ url_for('main.labeling_page', upload_id=upload.id) }}" class="action-button btn-success">進入標記模式</a>
         </div>
 
@@ -154,18 +158,14 @@
             </tbody>
         </table>
 
-        <!-- 分頁導覽列 -->
         <nav>
             <ul class="pagination">
-                <!-- 第一頁 -->
                 <li class="{{ 'disabled' if not pagination.has_prev else '' }}">
                     <a href="{{ url_for('main.results', upload_id=upload.id, page=1) }}">&laquo;&laquo;</a>
                 </li>
-                <!-- 上一頁 -->
                 <li class="{{ 'disabled' if not pagination.has_prev else '' }}">
                     <a href="{{ url_for('main.results', upload_id=upload.id, page=pagination.prev_num) }}">&laquo;</a>
                 </li>
-                <!-- 頁碼 -->
                 {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                     {% if page_num %}
                         <li class="{{ 'active' if page_num == pagination.page else '' }}">
@@ -175,11 +175,9 @@
                         <li class="disabled"><span>...</span></li>
                     {% endif %}
                 {% endfor %}
-                <!-- 下一頁 -->
                 <li class="{{ 'disabled' if not pagination.has_next else '' }}">
                     <a href="{{ url_for('main.results', upload_id=upload.id, page=pagination.next_num) }}">&raquo;</a>
                 </li>
-                <!-- 最後一頁 -->
                 <li class="{{ 'disabled' if not pagination.has_next else '' }}">
                     <a href="{{ url_for('main.results', upload_id=upload.id, page=pagination.pages) }}">&raquo;&raquo;</a>
                 </li>
@@ -188,4 +186,3 @@
     </div>
 </body>
 </html>
-
