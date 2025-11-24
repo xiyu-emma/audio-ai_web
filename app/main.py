@@ -3,9 +3,11 @@ import json
 import shutil
 from datetime import datetime
 from flask import (
-    Blueprint, current_app, render_template, request, redirect, url_for, jsonify
+    Blueprint, current_app, render_template, request, redirect, url_for, jsonify, Response
 )
 from werkzeug.utils import secure_filename
+import csv
+import io
 
 # 從 __init__.py 引入 db 和 celery 實例
 from . import db, celery
@@ -274,4 +276,58 @@ def update_result_label(result_id):
     result.label_id = label_id
     db.session.commit()
     return jsonify({'success': True})
+
+@main_bp.route('/labeling/<int:upload_id>/download_csv')
+def download_labels_csv(upload_id):
+    """下載帶有標籤的頻譜圖數據CSV檔案。"""
+    upload_record = Upload.query.get_or_404(upload_id)
+    
+    # 獲取所有結果和標籤
+    results = Result.query.filter_by(upload_id=upload_id).order_by(Result.id.asc()).all()
+    
+    # 創建CSV內容
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # 寫入標題行
+    writer.writerow([
+        'Result_ID', 'Spectrogram_Filename', 'Audio_Filename', 
+        'Label_ID', 'Label_Name', 'Spectrogram_URL', 'Spectrogram_Training_URL'
+    ])
+    
+    # 寫入數據行
+    for result in results:
+        label_name = result.label.name if result.label else ''
+        label_id = result.label_id if result.label_id else ''
+        audio_filename = result.audio_filename if result.audio_filename else ''
+        
+        writer.writerow([
+            result.id,
+            result.spectrogram_filename,
+            audio_filename,
+            label_id,
+            label_name,
+            result.spectrogram_url,
+            result.spectrogram_training_url
+        ])
+    
+    # 創建回應
+    output.seek(0)
+    csv_content = output.getvalue()
+    output.close()
+    
+    # 生成檔案名稱
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # 確保檔案名稱是安全的
+    safe_filename = secure_filename(upload_record.original_filename)
+    filename = f"spectrogram_labels_{safe_filename}_{upload_id}_{timestamp}.csv"
+    
+    # 創建回應物件
+    response = Response(
+        csv_content,
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
+    
+    return response
 
