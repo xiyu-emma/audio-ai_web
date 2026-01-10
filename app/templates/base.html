@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}音訊 AI 分析平台{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* 這裡可以放頁面特定的額外樣式 */
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('main.index') }}" class="brand-logo">
+                🐋 OceanAI <span class="brand-subtitle">聲景分析平台</span>
+            </a>
+            <div class="nav-links">
+                <a href="{{ url_for('main.index') }}" class="{{ 'active' if request.endpoint == 'main.index' }}">上傳分析</a>
+                <a href="{{ url_for('main.history') }}" class="{{ 'active' if request.endpoint == 'main.history' }}">歷史紀錄</a>
+                <a href="{{ url_for('main.training_status') }}" class="{{ 'active' if request.endpoint == 'main.training_status' }}">模型訓練</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 OceanAI Analysis Platform. All rights reserved.</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

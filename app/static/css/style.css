@@ -1,0 +1,300 @@
+/* --- 全域變數：海洋配色 --- */
+:root {
+    --primary-dark: #0f3057;   /* 深海藍 - 用於標題、導覽列 */
+    --primary-med: #00587a;    /* 中海藍 - 用於次要文字、邊框 */
+    --primary-light: #008891;  /* 淺海藍 - 用於強調、Focus 狀態 */
+    --accent: #e7e7de;         /* 浪花白 - 用於裝飾 */
+    --highlight: #ff6f61;      /* 珊瑚紅 - 用於進度條、強調按鈕 */
+    --bg-color: #f0f4f8;       /* 淺灰藍背景 - 用於網頁底色 */
+    --text-main: #333333;      /* 主要文字 */
+    --text-light: #666666;     /* 次要文字 */
+    --white: #ffffff;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --radius: 12px;            /* 圓角半徑 */
+}
+
+body {
+    font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    margin: 0;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* --- 導覽列 --- */
+.navbar {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-med));
+    color: var(--white);
+    padding: 1rem 0;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand-logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-subtitle {
+    font-size: 0.9rem;
+    font-weight: 400;
+    opacity: 0.8;
+    margin-left: 5px;
+    background: rgba(255,255,255,0.1);
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+
+.nav-links a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    margin-left: 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.nav-links a:hover, .nav-links a.active {
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* --- 佈局與容器 --- */
+.main-content {
+    flex: 1;
+    width: 100%;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+    box-sizing: border-box;
+}
+
+.container-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 2.5rem;
+    box-shadow: var(--shadow);
+    border-top: 5px solid var(--primary-light); /* 頂部色彩條 */
+}
+
+/* --- 標題與文字 --- */
+h1, h2, h3 {
+    color: var(--primary-dark);
+    margin-top: 0;
+}
+
+h1 { 
+    font-size: 1.8rem; 
+    margin-bottom: 1.5rem; 
+    border-bottom: 2px solid #eee; 
+    padding-bottom: 0.5rem; 
+}
+
+/* --- 表單元素 --- */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--primary-med);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="file"],
+select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    background-color: #f9f9f9;
+    box-sizing: border-box;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    background-color: var(--white);
+    box-shadow: 0 0 0 3px rgba(0, 136, 145, 0.1);
+}
+
+/* --- 按鈕 --- */
+.btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.btn-sm {
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-med), var(--primary-light));
+    color: var(--white);
+    box-shadow: 0 4px 6px rgba(0, 88, 122, 0.2);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 88, 122, 0.3);
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: var(--primary-dark);
+}
+
+.btn-secondary:hover {
+    background: #cbd5e1;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+/* --- 表格 --- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    background: var(--white);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.data-table th {
+    background-color: var(--primary-dark);
+    color: var(--white);
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.data-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.data-table tr:hover {
+    background-color: #f8fafc;
+}
+
+/* --- 狀態標籤 --- */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-PENDING { background: #eee; color: #666; }
+.status-PROCESSING { background: #e0f2fe; color: #0284c7; }
+.status-COMPLETED { background: #dcfce7; color: #166534; }
+.status-FAILED { background: #fee2e2; color: #991b1b; }
+.status-SUCCESS { background: #dcfce7; color: #166534; }
+.status-RUNNING { background: #e0f2fe; color: #0284c7; }
+
+/* --- 分頁與按鈕 (修正垂直置中) --- */
+.pagination {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    padding: 0;
+    margin-top: 2em;
+}
+
+.pagination li {
+    margin: 0 5px;
+}
+
+.pagination a, .pagination span {
+    /* 使用 Flexbox 確保文字絕對置中 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    padding: 10px 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #007bff;
+    background: white;
+    
+    line-height: 1; /* 重設行高，消除字體上下間距 */
+    height: 100%;   /* 確保高度填滿 */
+    box-sizing: border-box; /* 確保 padding 不會撐大尺寸 */
+}
+
+.pagination .active span {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.pagination .disabled span, .pagination .disabled a {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+/* --- 頁尾 --- */
+.footer {
+    background: var(--primary-dark);
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    padding: 1.5rem;
+    margin-top: auto;
+    font-size: 0.9rem;
+}
+
+/* --- RWD --- */
+@media (max-width: 768px) {
+    .nav-container { flex-direction: column; gap: 1rem; }
+    .nav-links { gap: 10px; margin-left: 0; }
+    .container-card { padding: 1.5rem; }
+}

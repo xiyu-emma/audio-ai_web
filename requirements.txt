@@ -15,3 +15,4 @@ soundfile
 cryptography
 tensorflow
 Pillow
+tensorflow-cpu

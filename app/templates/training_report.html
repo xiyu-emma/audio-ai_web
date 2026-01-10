@@ -1,58 +1,72 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <title>訓練報告 - 任務 #{{ run.id }}</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 2em; background-color: #f4f7f9; color: #333; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 2em; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        h1, h2, h3 { color: #1a253c; border-bottom: 2px solid #eef2f5; padding-bottom: 0.5em; }
-        .nav-link { margin-bottom: 2em; font-size: 1.1em; }
-        .nav-link a { color: #007bff; text-decoration: none; font-weight: 500; }
-        .nav-link a:hover { text-decoration: underline; }
-        
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2em; margin-top: 1.5em; }
-        .grid-item { text-align: center; }
-        .grid-item img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-        .grid-item p { margin-top: 0.5em; font-style: italic; color: #555; }
+{% extends "base.html" %}
 
-        table { width: 100%; border-collapse: collapse; margin-top: 1.5em; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
-        th { background-color: #f8f9fa; font-weight: 600; }
-        td { background-color: #fff; }
-        .metrics-summary { display: flex; gap: 2em; justify-content: center; background: #f8f9fa; padding: 1.5em; border-radius: 8px; text-align: center; }
-        .metric-box { flex-basis: 300px; max-width: 300px; }
-        .metric-box h3 { border: none; margin-top: 0; font-size: 1.2em; color: #555; }
-        .metric-box .value { font-size: 2.5em; font-weight: 700; color: #007bff; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="nav-link">
-            <a href="{{ url_for('main.training_status') }}">&larr; 返回訓練狀態列表</a>
-        </div>
-        <h1>模型訓練報告</h1>
-        <p><strong>任務 ID:</strong> #{{ run.id }}</p>
-        <p><strong>完成時間:</strong> {{ run.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+{% block title %}訓練報告 #{{ run.id }} - OceanAI{% endblock %}
 
-        <h2>1. 總體評估指標</h2>
-        <div class="metrics-summary">
-            {% if metrics and metrics.accuracy_top1 is not none %}
-            <div class="metric-box">
-                <h3>準確率</h3>
-                <p class="value">{{ "%.2f%%"|format(metrics.accuracy_top1 * 100) }}</p>
+{% block extra_css %}
+.metric-card {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+}
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-med);
+    margin: 0.5rem 0;
+}
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+.chart-box {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    text-align: center;
+}
+.chart-box img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+{% endblock %}
+
+{% block content %}
+<div class="container-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 1rem; margin-bottom: 2rem;">
+        <div>
+            <h1>模型訓練報告</h1>
+            <div style="color: var(--text-light);">
+                任務 ID: #{{ run.id }} | 完成時間: {{ run.timestamp.strftime('%Y-%m-%d %H:%M') }}
             </div>
+        </div>
+        <a href="{{ url_for('main.training_status') }}" class="btn btn-secondary">返回訓練列表</a>
+    </div>
+
+    <h3 style="border-left: 4px solid var(--primary-light); padding-left: 10px; margin-bottom: 1.5rem;">總體評估指標</h3>
+    <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 3rem;">
+        <div class="metric-card" style="min-width: 200px;">
+            <div style="color: var(--text-light); font-weight: 500;">Top-1 準確率</div>
+            {% if metrics and metrics.accuracy_top1 is not none %}
+                <div class="metric-value">{{ "%.2f"|format(metrics.accuracy_top1 * 100) }}<span style="font-size: 1rem;">%</span></div>
             {% else %}
-            <p>無總體準確率數據。</p>
+                <div class="metric-value" style="color: #ccc;">N/A</div>
             {% endif %}
         </div>
+    </div>
 
-        <h2>2. 詳細分類指標</h2>
+    <h3 style="border-left: 4px solid var(--primary-light); padding-left: 10px; margin-bottom: 1.5rem;">各類別詳細指標</h3>
+    <div style="overflow-x: auto; margin-bottom: 3rem;">
         {% if metrics and metrics.per_class_list %}
-        <table>
+        <table class="data-table">
             <thead>
                 <tr>
-                    <th>分類名稱</th>
+                    <th>分類名稱 (Class)</th>
                     <th>精確率 (Precision)</th>
                     <th>召回率 (Recall)</th>
                     <th>F1-Score</th>
@@ -61,42 +75,44 @@
             <tbody>
                 {% for class_metric in metrics.per_class_list %}
                 <tr>
-                    <td><strong>{{ class_metric.name }}</strong></td>
+                    <td style="font-weight: 600; color: var(--primary-dark);">{{ class_metric.name }}</td>
                     <td>{{ "%.3f"|format(class_metric.precision) }}</td>
                     <td>{{ "%.3f"|format(class_metric.recall) }}</td>
-                    <td>{{ "%.3f"|format(class_metric['f1-score']) }}</td>
+                    <td>
+                        <span style="background: #e0f2fe; padding: 2px 8px; border-radius: 4px; color: #0284c7; font-weight: bold;">
+                            {{ "%.3f"|format(class_metric['f1-score']) }}
+                        </span>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% else %}
-        <p>無詳細分類指標數據。</p>
+        <p style="text-align: center; color: #999;">無詳細分類數據。</p>
         {% endif %}
+    </div>
 
-        <h2>3. 視覺化分析</h2>
-        <div class="grid-container">
-            <div class="grid-item">
-                <h3>訓練過程曲線</h3>
-                <img src="{{ url_for('static', filename=images.results) }}" alt="訓練過程曲線圖">
-            </div>
-            <div class="grid-item">
-                <h3>混淆矩陣</h3>
-                <img src="{{ url_for('static', filename=images.confusion_matrix) }}" alt="混淆矩陣圖">
-            </div>
+    <h3 style="border-left: 4px solid var(--primary-light); padding-left: 10px; margin-bottom: 1.5rem;">訓練成效視覺化</h3>
+    <div class="chart-grid">
+        <div class="chart-box">
+            <h4 style="margin-top: 0; color: var(--text-light);">訓練過程曲線 (Loss & Accuracy)</h4>
+            <img src="{{ url_for('static', filename=images.results) }}" alt="訓練曲線圖">
         </div>
-
-        <h3>驗證集預測範例</h3>
-        <div class="grid-container">
-             <div class="grid-item">
-                <img src="{{ url_for('static', filename=images.val_batch0_labels) }}" alt="驗證集真實標籤">
-                <p><strong>真實標籤 (Ground Truth)</strong></p>
-            </div>
-            <div class="grid-item">
-                <img src="{{ url_for('static', filename=images.val_batch0_pred) }}" alt="驗證集模型預測">
-                <p><strong>模型預測 (Prediction)</strong></p>
-            </div>
+        <div class="chart-box">
+            <h4 style="margin-top: 0; color: var(--text-light);">混淆矩陣 (Confusion Matrix)</h4>
+            <img src="{{ url_for('static', filename=images.confusion_matrix) }}" alt="混淆矩陣圖">
         </div>
     </div>
-</body>
-</html>
 
+    <div class="chart-grid">
+         <div class="chart-box">
+            <h4 style="margin-top: 0; color: var(--text-light);">驗證集：真實標籤 (Ground Truth)</h4>
+            <img src="{{ url_for('static', filename=images.val_batch0_labels) }}" alt="真實標籤範例">
+        </div>
+        <div class="chart-box">
+            <h4 style="margin-top: 0; color: var(--text-light);">驗證集：模型預測 (Prediction)</h4>
+            <img src="{{ url_for('static', filename=images.val_batch0_pred) }}" alt="預測結果範例">
+        </div>
+    </div>
+</div>
+{% endblock %}
