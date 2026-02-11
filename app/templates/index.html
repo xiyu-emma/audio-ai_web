@@ -11,8 +11,10 @@
 
     <form method="post" action="{{ url_for('main.upload') }}" enctype="multipart/form-data">
         <div class="form-group">
-            <label for="file">選擇音訊檔案</label>
-            <input type="file" id="file" name="file" accept=".wav,.mp3" required style="padding: 1rem; border: 2px dashed #cbd5e1; background: #f8fafc;">
+            <label for="files">選擇音訊檔案 (可多選)</label>
+            <input type="file" id="files" name="files" accept=".wav,.mp3" required multiple
+                style="padding: 1rem; border: 2px dashed #cbd5e1; background: #f8fafc;">
+            <div id="fileList" class="file-list-preview"></div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -57,6 +59,116 @@
             </select>
         </div>
 
+        <!-- 頻譜圖進階參數設定 -->
+        <div class="spectrogram-params-section" id="specParamsSection">
+            <div class="params-header" onclick="toggleSpecParams()">
+                <span class="params-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                    <span id="paramsHeaderTitle">頻譜圖進階參數</span>
+                </span>
+                <span class="params-toggle" id="toggleIcon">▼</span>
+            </div>
+            <div class="params-content" id="specParamsContent">
+                <p class="params-description" id="paramsDescription">調整頻譜分析的進階參數，可影響頻譜圖的解析度與精確度。</p>
+
+                <!-- FFT Window Size & Hop Length - 適用於 mel, stft -->
+                <div class="param-row" data-spec-types="mel,stft"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group">
+                        <label for="n_fft">FFT Window Size (n_fft)</label>
+                        <select id="n_fft" name="n_fft">
+                            <option value="256">256</option>
+                            <option value="512">512</option>
+                            <option value="1024" selected>1024</option>
+                            <option value="2048">2048</option>
+                            <option value="4096">4096</option>
+                        </select>
+                        <span class="param-hint">較大值提供更高頻率解析度，但時間解析度較低</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="window_overlap">Window Overlap (窗口重疊率 %)</label>
+                        <input type="number" id="window_overlap" name="window_overlap" value="50" min="0" max="99"
+                            step="1">
+                        <span class="param-hint">建議範圍 25-90%，較高重疊率提供更平滑的時間軸</span>
+                    </div>
+                </div>
+
+                <!-- Window Type - 適用於 mel, stft -->
+                <div class="param-row" data-spec-types="mel,stft"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group">
+                        <label for="window_type">Window Type (窗函數)</label>
+                        <select id="window_type" name="window_type">
+                            <option value="hann" selected>Hann (漢寧窗)</option>
+                            <option value="hamming">Hamming (漢明窗)</option>
+                            <option value="blackman">Blackman (布萊克曼窗)</option>
+                            <option value="bartlett">Bartlett (巴特利特窗)</option>
+                            <option value="kaiser">Kaiser (凱撒窗)</option>
+                            <option value="rectangular">Rectangular (矩形窗)</option>
+                        </select>
+                        <span class="param-hint">不同窗函數影響頻譜洩漏特性</span>
+                    </div>
+
+                    <!-- n_mels - 僅適用於 mel -->
+                    <div class="form-group" data-spec-types="mel">
+                        <label for="n_mels">Mel 濾波器數量(n_mels)</label>
+                        <select id="n_mels" name="n_mels">
+                            <option value="40">40</option>
+                            <option value="64">64</option>
+                            <option value="80">80</option>
+                            <option value="128" selected>128</option>
+                            <option value="256">256</option>
+                        </select>
+                        <span class="param-hint">影響 Mel 頻率軸解析度</span>
+                    </div>
+                    <!-- Power - 適用於 mel 和 stft -->
+                    <div class="form-group" data-spec-types="mel,stft">
+                        <label for="power">功率指數</label>
+                        <select id="power" name="power">
+                            <option value="1.0">1.0 (幅度頻譜)</option>
+                            <option value="2.0" selected>2.0 (功率頻譜)</option>
+                        </select>
+                        <span class="param-hint">1.0 為幅度頻譜，2.0 為功率頻譜</span>
+                    </div>
+                </div>
+
+                <!-- 頻率範圍 - 適用於 mel -->
+                <div class="param-row" data-spec-types="mel"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group">
+                        <label for="f_min">最低頻率 (Hz)</label>
+                        <input type="number" id="f_min" name="f_min" value="0" min="0" step="10">
+                        <span class="param-hint">頻譜分析的最低頻率範圍</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="f_max">最高頻率 (Hz)</label>
+                        <input type="number" id="f_max" name="f_max" value="0" min="0" step="100"
+                            placeholder="預設為 sample_rate / 2">
+                        <span class="param-hint">設為 0 表示使用 Nyquist 頻率</span>
+                    </div>
+                </div>
+
+                <!-- 無可調整參數的提示 - 適用於 yamnet_log_mel, classic_demon, envelope_spectrum -->
+                <div class="param-row no-params-notice"
+                    data-spec-types="yamnet_log_mel,classic_demon,envelope_spectrum">
+                    <div class="no-params-box">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <span id="noParamsText">此頻譜圖類型使用預設參數，無需額外調整。</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div style="margin-top: 2rem;">
             <button type="submit" class="btn btn-primary" style="width: 100%;">
                 <span style="font-size: 1.2rem;">開始分析</span>
@@ -64,4 +176,94 @@
         </div>
     </form>
 </div>
+
+<script>
+    // 頻譜圖參數區塊展開/收合功能
+    function toggleSpecParams() {
+        const content = document.getElementById('specParamsContent');
+        const icon = document.getElementById('toggleIcon');
+        content.classList.toggle('collapsed');
+        icon.classList.toggle('collapsed');
+    }
+
+    // 頻譜類型對應的說明文字
+    const specTypeDescriptions = {
+        'mel': '調整 Mel 頻譜圖的進階參數，影響頻譜圖的解析度與精確度。',
+        'stft': '調整短時距傅立葉頻譜的進階參數。',
+        'yamnet_log_mel': 'YAMNet 使用固定的預訓練參數 (16kHz, 64 Mel bands)。',
+        'classic_demon': 'DEMON 頻譜使用預設參數 (2-7.5kHz 帶通濾波)。',
+        'envelope_spectrum': '包絡線頻譜使用預設參數進行分析。'
+    };
+
+    // 根據頻譜類型動態顯示/隱藏相關參數
+    document.addEventListener('DOMContentLoaded', function () {
+        const specTypeSelect = document.getElementById('spec_type');
+        const paramsSection = document.getElementById('specParamsSection');
+        const paramsDescription = document.getElementById('paramsDescription');
+        const paramRows = document.querySelectorAll('.param-row');
+        // 選取所有有 data-spec-types 屬性的 form-group 元素（嵌套在 row 內的獨立控制項目）
+        const paramItems = document.querySelectorAll('.form-group[data-spec-types]');
+
+        function updateParamsVisibility() {
+            const specType = specTypeSelect.value;
+
+            // 更新說明文字
+            paramsDescription.textContent = specTypeDescriptions[specType] || specTypeDescriptions['mel'];
+
+            // 更新參數列的可見性
+            paramRows.forEach(row => {
+                const allowedTypes = row.getAttribute('data-spec-types');
+                if (allowedTypes) {
+                    const types = allowedTypes.split(',');
+                    const shouldShow = types.includes(specType);
+                    row.style.display = shouldShow ? '' : 'none';
+                }
+            });
+
+            // 更新單獨參數項目的可見性 (嵌套在 row 內的)
+            paramItems.forEach(item => {
+                const allowedTypes = item.getAttribute('data-spec-types');
+                if (allowedTypes) {
+                    const types = allowedTypes.split(',');
+                    const shouldShow = types.includes(specType);
+                    // 徹底隱藏，不保留空間
+                    item.style.display = shouldShow ? 'block' : 'none';
+                }
+            });
+        }
+
+        specTypeSelect.addEventListener('change', updateParamsVisibility);
+        updateParamsVisibility();
+
+        // 多檔案選擇預覽
+        const filesInput = document.getElementById('files');
+        const fileListDiv = document.getElementById('fileList');
+
+        filesInput.addEventListener('change', function () {
+            fileListDiv.innerHTML = '';
+            const files = this.files;
+
+            if (files.length === 0) return;
+
+            const listTitle = document.createElement('div');
+            listTitle.className = 'file-list-title';
+            listTitle.innerHTML = `<strong>已選擇 ${files.length} 個檔案：</strong>`;
+            fileListDiv.appendChild(listTitle);
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-list-item';
+
+                const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+                fileItem.innerHTML = `
+                    <span class="file-icon">🎵</span>
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-size">${sizeMB} MB</span>
+                `;
+                fileListDiv.appendChild(fileItem);
+            }
+        });
+    });
+</script>
 {% endblock %}

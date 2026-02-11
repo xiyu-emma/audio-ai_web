@@ -20,9 +20,9 @@ main_bp = Blueprint('main', __name__)
 
 # --- Helper Functions ---
 
-# API 權限驗證 (給洋聲使用)
+# API 權限驗證 (給洋聲使用) - 從環境變數取得 Token
 API_TOKENS = {
-    "yang_sheng_partner": "sk_test_1234567890abcdef"
+    "yang_sheng_partner": os.environ.get('YANG_SHENG_API_TOKEN', 'sk_test_1234567890abcdef')
 }
 
 def require_api_token(f):
@@ -99,7 +99,8 @@ def results(upload_id):
         'result.html',
         upload=upload_record,
         pagination=pagination,
-        hop_length_seconds=hop_length_seconds
+        hop_length_seconds=hop_length_seconds,
+        params=params
     )
 
 @main_bp.route('/labeling/<int:upload_id>')
@@ -118,9 +119,12 @@ def labeling_page(upload_id):
     for cetacean, result in zip(pagination.items, results_slice):
         setattr(cetacean, 'spectrogram_url', result.spectrogram_url)
         setattr(cetacean, 'spectrogram_training_url', result.spectrogram_training_url)
-        setattr(cetacean, 'label_id', cetacean.event_type) 
+        setattr(cetacean, 'label_id', cetacean.event_type)
+    
+    # 查詢已完成的訓練任務供自動標記使用
+    training_runs = TrainingRun.query.filter_by(status='SUCCESS').order_by(TrainingRun.timestamp.desc()).all()
 
-    return render_template('label.html', upload=upload_record, pagination=pagination)
+    return render_template('label.html', upload=upload_record, pagination=pagination, training_runs=training_runs)
 
 # --- 下載功能路由 ---
 
@@ -207,10 +211,10 @@ def download_dataset_zip(upload_id):
 
 @main_bp.route('/upload', methods=['POST'])
 def upload():
-    """Web 上傳介面"""
-    if 'file' not in request.files: return redirect(request.url)
-    file = request.files['file']
-    if file.filename == '': return redirect(request.url)
+    """Web 上傳介面 - 支援多檔案上傳"""
+    files = request.files.getlist('files')
+    if not files or all(f.filename == '' for f in files):
+        return redirect(url_for('main.index'))
     
     try:
         params_dict = {
@@ -218,40 +222,57 @@ def upload():
             'segment_duration': float(request.form['segment_duration']),
             'overlap': float(request.form['overlap']),
             'sample_rate': request.form.get('sample_rate', 'None'),
-            'channels': request.form.get('channels', 'mono')
+            'channels': request.form.get('channels', 'mono'),
+            # 頻譜圖進階參數
+            'n_fft': int(request.form.get('n_fft', 1024)),
+            'window_overlap': float(request.form.get('window_overlap', 50)),  # 改為百分比
+            'window_type': request.form.get('window_type', 'hann'),
+            'n_mels': int(request.form.get('n_mels', 128)),
+            'f_min': float(request.form.get('f_min', 0)),
+            'f_max': float(request.form.get('f_max', 0)),  # 0 表示使用 Nyquist 頻率
+            'power': float(request.form.get('power', 2.0))
         }
-    except: return "參數錯誤", 400
+    except: 
+        return "參數錯誤", 400
 
-    if file:
-        filename = secure_filename(file.filename)
-        file_ext = os.path.splitext(filename)[1].lower().replace('.', '')
-        params_json = json.dumps(params_dict)
-        
-        default_point = PointInfo.query.first()
-        point_id = default_point.id if default_point else None
-
-        new_audio = AudioInfo(
-            file_name=filename, file_path="pending", file_type=file_ext,
-            result_path="pending", params=params_json, status='PENDING', point_id=point_id
-        )
-        db.session.add(new_audio)
-        db.session.commit()
-        
-        upload_id = new_audio.id
-        result_dir_relative = os.path.join('results', str(upload_id))
-        result_dir_absolute = os.path.join(current_app.root_path, 'static', result_dir_relative)
-        os.makedirs(result_dir_absolute, exist_ok=True)
-        
-        upload_filename = f"{upload_id}_{filename}"
-        upload_path_absolute = os.path.join(current_app.root_path, current_app.config['UPLOAD_FOLDER'], upload_filename)
-        file.save(upload_path_absolute)
-        
-        new_audio.file_path = upload_path_absolute
-        new_audio.result_path = result_dir_relative
-        db.session.commit()
-        
-        celery.send_task('app.tasks.process_audio_task', args=[upload_id])
-        return redirect(url_for('main.history', new_upload_id=upload_id)) # 導向帶有新 ID 的網址以觸發輪詢
+    params_json = json.dumps(params_dict)
+    default_point = PointInfo.query.first()
+    point_id = default_point.id if default_point else None
+    
+    uploaded_ids = []
+    
+    for file in files:
+        if file and file.filename != '':
+            filename = secure_filename(file.filename)
+            file_ext = os.path.splitext(filename)[1].lower().replace('.', '')
+            
+            new_audio = AudioInfo(
+                file_name=filename, file_path="pending", file_type=file_ext,
+                result_path="pending", params=params_json, status='PENDING', point_id=point_id
+            )
+            db.session.add(new_audio)
+            db.session.commit()
+            
+            upload_id = new_audio.id
+            result_dir_relative = os.path.join('results', str(upload_id))
+            result_dir_absolute = os.path.join(current_app.root_path, 'static', result_dir_relative)
+            os.makedirs(result_dir_absolute, exist_ok=True)
+            
+            upload_filename = f"{upload_id}_{filename}"
+            upload_path_absolute = os.path.join(current_app.root_path, current_app.config['UPLOAD_FOLDER'], upload_filename)
+            file.save(upload_path_absolute)
+            
+            new_audio.file_path = upload_path_absolute
+            new_audio.result_path = result_dir_relative
+            db.session.commit()
+            
+            # 派送 Celery 任務 - 自動排隊處理
+            celery.send_task('app.tasks.process_audio_task', args=[upload_id])
+            uploaded_ids.append(upload_id)
+    
+    if uploaded_ids:
+        # 導向歷史頁面，顯示第一筆新上傳的檔案
+        return redirect(url_for('main.history', new_upload_id=uploaded_ids[0]))
     return redirect(url_for('main.index'))
 
 @main_bp.route('/history/delete_selected', methods=['POST'])
@@ -309,35 +330,87 @@ def update_cetacean_label(cetacean_id):
 
 @main_bp.route('/labeling/auto_label', methods=['POST'])
 def auto_label():
-    """啟動自動標記任務"""
-    if 'model_file' not in request.files: return "無檔案", 400
-    file = request.files['model_file']
+    """啟動自動標記任務 - 使用已訓練的模型"""
     upload_id = request.form.get('upload_id')
+    run_id = request.form.get('run_id')
     
-    if file and upload_id:
-        filename = secure_filename(file.filename)
-        temp_dir = os.path.join(current_app.root_path, 'static', 'temp_models')
-        os.makedirs(temp_dir, exist_ok=True)
-        saved_path = os.path.join(temp_dir, f"{datetime.now().strftime('%Y%m%d')}_{upload_id}_{filename}")
-        file.save(saved_path)
-        
-        celery.send_task('app.tasks.auto_label_task', args=[int(upload_id), saved_path])
-        return redirect(url_for('main.labeling_page', upload_id=upload_id))
-    return "錯誤", 400
+    if not upload_id or not run_id:
+        return "缺少必要參數", 400
+    
+    # 從 TrainingRun 取得模型資訊
+    training_run = TrainingRun.query.get(run_id)
+    if not training_run or training_run.status != 'SUCCESS':
+        return "找不到有效的訓練模型", 404
+    
+    # 取得模型路徑
+    model_path = os.path.join(
+        current_app.root_path, 'static', 
+        training_run.results_path, 'weights', 'best.pt'
+    )
+    
+    if not os.path.exists(model_path):
+        return f"模型檔案不存在: {model_path}", 404
+    
+    # 從訓練參數取得模型類型
+    params = training_run.get_params() if hasattr(training_run, 'get_params') else {}
+    if isinstance(params, str):
+        params = json.loads(params) if params else {}
+    model_type = params.get('model_type', 'yolov8n-cls')
+    
+    # 從 metrics 取得類別資訊
+    metrics = training_run.get_metrics() if hasattr(training_run, 'get_metrics') else {}
+    if isinstance(metrics, str):
+        metrics = json.loads(metrics) if metrics else {}
+    
+    classes_list = []
+    if 'per_class_list' in metrics:
+        classes_list = [item['name'] for item in metrics['per_class_list']]
+    
+    celery.send_task('app.tasks.auto_label_task_v2', args=[
+        int(upload_id), 
+        model_path, 
+        model_type, 
+        classes_list
+    ])
+    return redirect(url_for('main.labeling_page', upload_id=upload_id))
 
 @main_bp.route('/training/start', methods=['POST'])
 def start_training():
-    """啟動訓練任務"""
+    """啟動訓練任務 - 支援多模型選擇和自訂參數"""
     upload_ids = request.form.getlist('upload_ids')
-    model_name = request.form.get('model_name', 'yolov8n-cls.pt')
+    model_type = request.form.get('model_type', 'yolov8n-cls')
+    
+    # 收集訓練參數
+    train_params = {
+        'epochs': int(request.form.get('epochs', 50)),
+        'batch_size': int(request.form.get('batch_size', 16)),
+        'learning_rate': float(request.form.get('learning_rate', 0.001)),
+        'image_size': int(request.form.get('image_size', 224))
+    }
     
     if upload_ids:
-        params = {'model_name': model_name, 'upload_ids': upload_ids}
+        # 儲存參數到資料庫
+        params = {
+            'model_type': model_type,
+            'upload_ids': upload_ids,
+            **train_params
+        }
         run = TrainingRun(status='PENDING', params=json.dumps(params))
         db.session.add(run)
         db.session.commit()
-        celery.send_task('app.tasks.train_yolo_model', args=[upload_ids, run.id, model_name])
-        return redirect(url_for('main.training_status', new_run_id=run.id)) # 導向並觸發輪詢
+        
+        # 根據模型類型選擇對應的任務
+        if model_type.startswith('yolov8'):
+            task_name = 'app.tasks.train_yolo_model'
+            model_name = f"{model_type}.pt"
+        else:
+            # CNN 模型 (resnet18, efficientnet_b0)
+            task_name = 'app.tasks.train_cnn_model'
+            model_name = model_type
+        
+        celery.send_task(task_name, args=[upload_ids, run.id, model_name, train_params])
+        return redirect(url_for('main.training_status', new_run_id=run.id))
+    
     return redirect(url_for('main.history'))
 
 @main_bp.route('/training/delete_selected', methods=['POST'])
@@ -369,24 +442,68 @@ def training_status():
 
 @main_bp.route('/training/report/<int:run_id>')
 def training_report(run_id):
-    """渲染單次模型訓練的詳細報告 (包含路徑修復)"""
+    """渲染單次模型訓練的詳細報告 (支援多模型類型)"""
     run = TrainingRun.query.get_or_404(run_id)
     if run.status != 'SUCCESS' or not run.results_path:
         return "此訓練任務尚未成功完成，無法查看報告。", 404
+    
+    # 解析訓練參數
+    params = run.get_params() if hasattr(run, 'get_params') else {}
+    if isinstance(params, str):
+        params = json.loads(params) if params else {}
+    
+    model_type = params.get('model_type', 'yolov8n-cls')
+    is_yolo = model_type.startswith('yolov8')
+    
+    # 模型顯示名稱對照
+    model_display_names = {
+        'yolov8n-cls': 'YOLOv8n Classification',
+        'yolov8s-cls': 'YOLOv8s Classification',
+        'resnet18': 'ResNet18 (PyTorch)',
+        'efficientnet_b0': 'EfficientNet-B0 (PyTorch)'
+    }
     
     results_base_path = run.results_path.replace('\\', '/')
     if results_base_path.startswith('/'):
         results_base_path = results_base_path[1:]
 
+    # 根據模型類型準備可用的圖片
     report_images = {
         'results': f"{results_base_path}/results.png",
-        'confusion_matrix': f"{results_base_path}/confusion_matrix.png",
-        'val_batch0_labels': f"{results_base_path}/val_batch0_labels.jpg",
-        'val_batch0_pred': f"{results_base_path}/val_batch0_pred.jpg",
     }
     
+    # 混淆矩陣：優先使用手動生成的版本
+    import os
+    static_path = os.path.join(current_app.root_path, 'static')
+    manual_cm = os.path.join(static_path, results_base_path, 'confusion_matrix_manual.png')
+    original_cm = os.path.join(static_path, results_base_path, 'confusion_matrix.png')
+    
+    if os.path.exists(manual_cm):
+        report_images['confusion_matrix'] = f"{results_base_path}/confusion_matrix_manual.png"
+    elif os.path.exists(original_cm):
+        report_images['confusion_matrix'] = f"{results_base_path}/confusion_matrix.png"
+    else:
+        report_images['confusion_matrix'] = f"{results_base_path}/confusion_matrix.png"
+    
+    # YOLO 特有圖片
+    if is_yolo:
+        report_images.update({
+            'val_batch0_labels': f"{results_base_path}/val_batch0_labels.jpg",
+            'val_batch0_pred': f"{results_base_path}/val_batch0_pred.jpg",
+        })
+    
     metrics = run.get_metrics()
-    return render_template('training_report.html', run=run, images=report_images, metrics=metrics)
+    
+    return render_template(
+        'training_report.html', 
+        run=run, 
+        images=report_images, 
+        metrics=metrics,
+        params=params,
+        model_type=model_type,
+        model_display_name=model_display_names.get(model_type, model_type),
+        is_yolo=is_yolo
+    )
 
 # --- 洋聲專用 API ---
 

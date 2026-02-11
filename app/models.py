@@ -248,3 +248,15 @@ class TrainingRun(db.Model):
             except (json.JSONDecodeError, TypeError):
                 return {}
         return {}
+    
+    def get_model_display_name(self):
+        """取得模型的友善顯示名稱"""
+        model_names = {
+            'yolov8n-cls': 'YOLOv8n',
+            'yolov8s-cls': 'YOLOv8s',
+            'resnet18': 'ResNet18',
+            'efficientnet_b0': 'EfficientNet-B0'
+        }
+        params = self.get_params()
+        model_type = params.get('model_type', 'yolov8n-cls')
+        return model_names.get(model_type, model_type)

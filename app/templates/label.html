@@ -5,103 +5,103 @@
 {% block extra_css %}
 /* 標記頁面專屬樣式 */
 .auto-label-box {
-    background-color: #f0f9ff; /* 極淡藍 */
-    border: 1px solid #bae6fd;
-    padding: 1.5rem;
-    border-radius: var(--radius);
-    margin-bottom: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
+background-color: #f0f9ff; /* 極淡藍 */
+border: 1px solid #bae6fd;
+padding: 1.5rem;
+border-radius: var(--radius);
+margin-bottom: 2rem;
+display: flex;
+align-items: center;
+gap: 1.5rem;
 }
 
 .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+gap: 1.5rem;
+margin-bottom: 2rem;
 }
 
 .label-card {
-    background: var(--white);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-    border: 1px solid #eee;
+background: var(--white);
+border-radius: var(--radius);
+box-shadow: var(--shadow);
+overflow: hidden;
+transition: transform 0.2s, box-shadow 0.2s;
+border: 1px solid #eee;
 }
 
 .label-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+transform: translateY(-4px);
+box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
-    background-color: #f8fafc;
-    padding: 0.8rem 1rem;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9rem;
-    color: var(--text-light);
+background-color: #f8fafc;
+padding: 0.8rem 1rem;
+border-bottom: 1px solid #eee;
+display: flex;
+justify-content: space-between;
+align-items: center;
+font-size: 0.9rem;
+color: var(--text-light);
 }
 
 .card-image {
-    width: 100%;
-    height: auto;
-    display: block;
-    min-height: 150px;
-    object-fit: contain;
+width: 100%;
+height: auto;
+display: block;
+min-height: 150px;
+object-fit: contain;
 }
 
 .card-body {
-    padding: 1rem;
+padding: 1rem;
 }
 
 /* 標記下拉選單優化 */
 select.label-select {
-    width: 100%;
-    padding: 10px;
-    border: 2px solid #e2e8f0;
-    border-radius: 6px;
-    background-color: #fff;
-    font-size: 1rem;
-    color: var(--text-main);
-    cursor: pointer;
+width: 100%;
+padding: 10px;
+border: 2px solid #e2e8f0;
+border-radius: 6px;
+background-color: #fff;
+font-size: 1rem;
+color: var(--text-main);
+cursor: pointer;
 }
 
 select.label-select:focus {
-    border-color: var(--primary-light);
+border-color: var(--primary-light);
 }
 
 select.label-select.labeled {
-    border-color: #10b981; /* Green */
-    background-color: #ecfdf5;
-    color: #065f46;
-    font-weight: 600;
+border-color: #10b981; /* Green */
+background-color: #ecfdf5;
+color: #065f46;
+font-weight: 600;
 }
 
 /* Toast 通知樣式 */
 #toast {
-    visibility: hidden;
-    min-width: 300px;
-    background-color: var(--primary-dark);
-    color: #fff;
-    text-align: center;
-    border-radius: 8px;
-    padding: 16px;
-    position: fixed;
-    z-index: 999;
-    left: 50%;
-    bottom: 30px;
-    transform: translateX(-50%);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-    font-weight: 500;
+visibility: hidden;
+min-width: 300px;
+background-color: var(--primary-dark);
+color: #fff;
+text-align: center;
+border-radius: 8px;
+padding: 16px;
+position: fixed;
+z-index: 999;
+left: 50%;
+bottom: 30px;
+transform: translateX(-50%);
+box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+font-weight: 500;
 }
 #toast.show {
-    visibility: visible;
-    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+visibility: visible;
+animation: fadein 0.5s, fadeout 0.5s 2.5s;
 }
 @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
 @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
@@ -109,11 +109,12 @@ select.label-select.labeled {
 
 {% block content %}
 <div class="container-card" style="background: transparent; box-shadow: none; padding: 0;">
-    <div style="background: white; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+    <div
+        style="background: white; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h2 style="margin-bottom: 0.5rem;">資料標記模式</h2>
             <div style="color: var(--text-light); font-size: 0.9rem;">
-                <span>檔案：{{ upload.original_filename }}</span> | 
+                <span>檔案：{{ upload.original_filename }}</span> |
                 <span>時間：{{ upload.upload_timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
             </div>
         </div>
@@ -125,10 +126,25 @@ select.label-select.labeled {
 
     <div class="auto-label-box">
         <h4 style="margin: 0; color: var(--primary-dark); white-space: nowrap;">AI 輔助標記</h4>
-        <form action="{{ url_for('main.auto_label') }}" method="post" enctype="multipart/form-data" style="display:flex; gap:10px; flex-grow:1; align-items: center;">
+        <form action="{{ url_for('main.auto_label') }}" method="post"
+            style="display:flex; gap:10px; flex-grow:1; align-items: center; flex-wrap: wrap;">
             <input type="hidden" name="upload_id" value="{{ upload.id }}">
-            <input type="file" name="model_file" accept=".pt,.h5" required style="flex-grow: 1; background: white;">
-            <button type="submit" class="btn btn-primary">上傳並執行</button>
+            {% if training_runs and training_runs|length > 0 %}
+            <select name="run_id" class="form-select" required
+                style="flex-grow: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">-- 選擇已訓練的模型 --</option>
+                {% for run in training_runs %}
+                <option value="{{ run.id }}">
+                    #{{ run.id }} - {{ run.get_model_display_name() }}
+                    ({{ run.timestamp.strftime('%m/%d %H:%M') }})
+                </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">執行自動標記</button>
+            {% else %}
+            <span style="color: #666; font-size: 0.9rem;">尚無已完成的訓練模型，請先前往「訓練」頁面訓練模型。</span>
+            <a href="{{ url_for('main.training_status') }}" class="btn btn-secondary">前往訓練</a>
+            {% endif %}
         </form>
     </div>
 
@@ -138,41 +154,43 @@ select.label-select.labeled {
             <div class="card-header">
                 <span>#{{ loop.index + (pagination.page - 1) * pagination.per_page }}</span>
                 {% if item.detect_type == 1 %}
-                    <span class="status-badge" style="background: #e0f2fe; color: #0369a1;">AI 辨識</span>
+                <span class="status-badge" style="background: #e0f2fe; color: #0369a1;">AI 辨識</span>
                 {% else %}
-                    <span class="status-badge" style="background: #f1f5f9; color: #64748b;">人工</span>
+                <span class="status-badge" style="background: #f1f5f9; color: #64748b;">人工</span>
                 {% endif %}
             </div>
 
             {% if item.spectrogram_url %}
-                <a href="{{ url_for('static', filename=item.spectrogram_url) }}" target="_blank">
-                    <img src="{{ url_for('static', filename=item.spectrogram_url) }}" class="card-image" alt="頻譜圖" loading="lazy">
-                </a>
+            <a href="{{ url_for('static', filename=item.spectrogram_url) }}" target="_blank">
+                <img src="{{ url_for('static', filename=item.spectrogram_url) }}" class="card-image" alt="頻譜圖"
+                    loading="lazy">
+            </a>
             {% else %}
-                <div style="height: 150px; display: flex; align-items: center; justify-content: center; background: #eee; color: #999;">
-                    無影像
-                </div>
+            <div
+                style="height: 150px; display: flex; align-items: center; justify-content: center; background: #eee; color: #999;">
+                無影像
+            </div>
             {% endif %}
 
             <div class="card-body">
-                <select class="label-select {{ 'labeled' if item.event_type and item.event_type != 0 else '' }}" 
-                        onchange="updateLabel({{ item.id }}, this)">
-                    <option value="0" {{ 'selected' if item.event_type == 0 }}>0. 未知</option>
-                    
+                <select class="label-select {{ 'labeled' if item.event_type and item.event_type != 0 else '' }}"
+                    onchange="updateLabel({{ item.id }}, this)">
+                    <option value="0" {{ 'selected' if item.event_type==0 }}>0. 未知</option>
+
                     <optgroup label="鯨豚聲紋">
-                        <option value="1" {{ 'selected' if item.event_type == 1 }}>1. 上升型 (Upsweep)</option>
-                        <option value="2" {{ 'selected' if item.event_type == 2 }}>2. 下降型 (Downsweep)</option>
-                        <option value="3" {{ 'selected' if item.event_type == 3 }}>3. U型 (Concave)</option>
-                        <option value="4" {{ 'selected' if item.event_type == 4 }}>4. 倒U型 (Convex)</option>
-                        <option value="6" {{ 'selected' if item.event_type == 6 }}>6. sin型 (Sine)</option>
-                        <option value="7" {{ 'selected' if item.event_type == 7 }}>7. 嘎搭聲 (Click)</option>
-                        <option value="8" {{ 'selected' if item.event_type == 8 }}>8. 突發脈衝聲 (Burst)</option>
+                        <option value="1" {{ 'selected' if item.event_type==1 }}>1. 上升型 (Upsweep)</option>
+                        <option value="2" {{ 'selected' if item.event_type==2 }}>2. 下降型 (Downsweep)</option>
+                        <option value="3" {{ 'selected' if item.event_type==3 }}>3. U型 (Concave)</option>
+                        <option value="4" {{ 'selected' if item.event_type==4 }}>4. 倒U型 (Convex)</option>
+                        <option value="6" {{ 'selected' if item.event_type==6 }}>6. sin型 (Sine)</option>
+                        <option value="7" {{ 'selected' if item.event_type==7 }}>7. 嘎搭聲 (Click)</option>
+                        <option value="8" {{ 'selected' if item.event_type==8 }}>8. 突發脈衝聲 (Burst)</option>
                     </optgroup>
 
                     <optgroup label="環境與干擾">
-                        <option value="90" {{ 'selected' if item.event_type == 90 }}>90. 環境噪音 (Noise)</option>
-                        <option value="91" {{ 'selected' if item.event_type == 91 }}>91. 船舶 (Ship)</option>
-                        <option value="92" {{ 'selected' if item.event_type == 92 }}>92. 風機打樁 (Piling)</option>
+                        <option value="90" {{ 'selected' if item.event_type==90 }}>90. 環境噪音 (Noise)</option>
+                        <option value="91" {{ 'selected' if item.event_type==91 }}>91. 船舶 (Ship)</option>
+                        <option value="92" {{ 'selected' if item.event_type==92 }}>92. 風機打樁 (Piling)</option>
                     </optgroup>
                 </select>
             </div>
@@ -182,15 +200,18 @@ select.label-select.labeled {
 
     <div style="display: flex; justify-content: center; gap: 10px; margin-top: 2rem; padding-bottom: 2rem;">
         {% if pagination.has_prev %}
-            <a href="{{ url_for('main.labeling_page', upload_id=upload.id, page=pagination.prev_num) }}" class="btn btn-secondary">上一頁</a>
+        <a href="{{ url_for('main.labeling_page', upload_id=upload.id, page=pagination.prev_num) }}"
+            class="btn btn-secondary">上一頁</a>
         {% endif %}
-        
-        <span class="btn" style="background: white; border: 1px solid #ddd; cursor: default; color: var(--primary-dark);">
+
+        <span class="btn"
+            style="background: white; border: 1px solid #ddd; cursor: default; color: var(--primary-dark);">
             {{ pagination.page }} / {{ pagination.pages }}
         </span>
 
         {% if pagination.has_next %}
-            <a href="{{ url_for('main.labeling_page', upload_id=upload.id, page=pagination.next_num) }}" class="btn btn-secondary">下一頁</a>
+        <a href="{{ url_for('main.labeling_page', upload_id=upload.id, page=pagination.next_num) }}"
+            class="btn btn-secondary">下一頁</a>
         {% endif %}
     </div>
 </div>
@@ -200,11 +221,11 @@ select.label-select.labeled {
 <script>
     function updateLabel(cetaceanId, selectElement) {
         const labelId = parseInt(selectElement.value);
-        
+
         // 取得該卡片的顯示編號
         const card = selectElement.closest('.label-card');
         const displayNumber = card.querySelector('.card-header span').innerText;
-        
+
         // 取得選中的標籤名稱
         const labelText = selectElement.options[selectElement.selectedIndex].text;
 
@@ -221,25 +242,25 @@ select.label-select.labeled {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ label_id: labelId })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(`${displayNumber} 更新為：${labelText}`);
-            } else {
-                alert('標記失敗: ' + (data.error || '未知錯誤'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('網路錯誤');
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(`${displayNumber} 更新為：${labelText}`);
+                } else {
+                    alert('標記失敗: ' + (data.error || '未知錯誤'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('網路錯誤');
+            });
     }
 
     function showToast(message) {
         const toast = document.getElementById("toast");
         toast.innerText = message;
         toast.className = "show";
-        setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 2000);
+        setTimeout(function () { toast.className = toast.className.replace("show", ""); }, 2000);
     }
 </script>
 {% endblock %}

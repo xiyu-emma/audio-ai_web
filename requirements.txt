@@ -16,3 +16,4 @@ cryptography
 tensorflow
 Pillow
 tensorflow-cpu
+scikit-learn

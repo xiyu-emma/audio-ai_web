@@ -17,46 +17,69 @@
                         <th width="40"><input type="checkbox" onclick="toggleAll(this)"></th>
                         <th width="80">任務 ID</th>
                         <th>開始時間</th>
+                        <th>參數摘要</th>
                         <th>狀態</th>
                         <th>操作</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for run in runs %}
+                    {% set params = run.get_params() %}
                     <tr id="run-row-{{ run.id }}">
                         <td><input type="checkbox" name="run_ids" value="{{ run.id }}" class="run-checkbox"></td>
                         <td><strong>#{{ run.id }}</strong></td>
                         <td>{{ run.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td style="font-size: 0.85rem;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                <span
+                                    style="background: #e0e7ff; color: #4338ca; padding: 2px 6px; border-radius: 4px;">{{
+                                    run.get_model_display_name() }}</span>
+                                <span
+                                    style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px;">{{
+                                    params.get('epochs', 50) }} epochs</span>
+                                <span
+                                    style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px;">batch
+                                    {{ params.get('batch_size', 16) }}</span>
+                                <span
+                                    style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px;">{{
+                                    params.get('image_size', 224) }}px</span>
+                            </div>
+                        </td>
                         <td class="status-cell">
                             {% if run.status == 'RUNNING' or run.status == 'PENDING' %}
-                                <div style="width: 120px; background: #eee; height: 8px; border-radius: 4px; overflow: hidden; position: relative;">
-                                    <div class="progress-bar" style="width: {{ run.progress }}%; background: var(--highlight); height: 100%; transition: width 0.4s;"></div>
+                            <div
+                                style="width: 120px; background: #eee; height: 8px; border-radius: 4px; overflow: hidden; position: relative;">
+                                <div class="progress-bar"
+                                    style="width: {{ run.progress }}%; background: var(--highlight); height: 100%; transition: width 0.4s;">
                                 </div>
-                                <small class="progress-text" style="color: var(--primary-med);">{{ run.progress }}%</small>
+                            </div>
+                            <small class="progress-text" style="color: var(--primary-med);">{{ run.progress }}%</small>
                             {% else %}
-                                <span class="status-badge status-{{ run.status }}">{{ run.status }}</span>
+                            <span class="status-badge status-{{ run.status }}">{{ run.status }}</span>
                             {% endif %}
                         </td>
                         <td class="action-cell">
                             {% if run.status == 'SUCCESS' %}
-                                <a href="{{ url_for('main.training_report', run_id=run.id) }}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85rem;">查看報告</a>
-                                <a href="{{ url_for('static', filename=run.results_path + '/weights/best.pt') }}" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.85rem;" download>下載模型</a>
+                            <a href="{{ url_for('main.training_report', run_id=run.id) }}" class="btn btn-secondary"
+                                style="padding: 4px 10px; font-size: 0.85rem;">查看報告</a>
+                            <a href="{{ url_for('static', filename=run.results_path + '/weights/best.pt') }}"
+                                class="btn btn-primary" style="padding: 4px 10px; font-size: 0.85rem;" download>下載模型</a>
                             {% elif run.status == 'FAILURE' %}
-                                <span style="color: var(--highlight);">訓練失敗</span>
+                            <span style="color: var(--highlight);">訓練失敗</span>
                             {% else %}
-                                <span style="color: #ccc;">--</span>
+                            <span style="color: #ccc;">--</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 2rem; color: #999;">目前沒有訓練任務紀錄。</td>
+                        <td colspan="6" style="text-align: center; padding: 2rem; color: #999;">目前沒有訓練任務紀錄。</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        
+
         <div style="margin-top: 2rem; text-align: right;">
             <button type="button" class="btn btn-danger" onclick="submitDeletion()">刪除選取項目</button>
         </div>
@@ -116,15 +139,15 @@
         // 啟動輪詢
         function startPolling(runId) {
             if (activeIntervals.has(runId)) return;
-            
+
             // 每 2 秒詢問一次 API
             const intervalId = setInterval(() => {
                 fetch(`/api/training/${runId}/status`)
                     .then(response => response.ok ? response.json() : Promise.reject())
                     .then(data => updateRow(data))
                     .catch(() => stopPolling(runId)); // 發生錯誤就停止，避免無限報錯
-            }, 2000); 
-            
+            }, 2000);
+
             activeIntervals.set(runId, intervalId);
         }
 
@@ -155,23 +178,23 @@
             if (!row) return;
 
             const statusCell = row.querySelector('.status-cell');
-            
+
             // 如果還在跑 (RUNNING 或 PENDING)
             if (data.status === 'RUNNING' || data.status === 'PENDING') {
                 initProgressBar(row); // 確保結構存在
-                
+
                 const progressBar = statusCell.querySelector('.progress-bar');
                 const progressText = statusCell.querySelector('.progress-text');
-                
+
                 if (progressBar) progressBar.style.width = `${data.progress}%`;
                 if (progressText) progressText.textContent = `${data.progress}%`;
             } else {
                 // 任務結束，停止輪詢並更新為結果按鈕
                 stopPolling(data.id);
-                
+
                 // 1. 更新狀態標籤
                 statusCell.innerHTML = `<span class="status-badge status-${data.status}">${data.status}</span>`;
-                
+
                 // 2. 更新操作按鈕
                 const actionCell = row.querySelector('.action-cell');
                 if (data.status === 'SUCCESS') {

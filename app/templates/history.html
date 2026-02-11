@@ -8,8 +8,12 @@
         <h1>分析歷史紀錄</h1>
         <div class="sort-options">
             <span style="color: var(--text-light); margin-right: 10px;">排序：</span>
-            <a href="{{ url_for('main.history', sort='desc') }}" class="btn btn-sm {{ 'btn-secondary' if current_sort != 'desc' else 'btn-primary' }}" style="padding: 5px 12px; font-size: 0.9rem;">由新到舊</a>
-            <a href="{{ url_for('main.history', sort='asc') }}" class="btn btn-sm {{ 'btn-secondary' if current_sort != 'asc' else 'btn-primary' }}" style="padding: 5px 12px; font-size: 0.9rem;">由舊到新</a>
+            <a href="{{ url_for('main.history', sort='desc') }}"
+                class="btn btn-sm {{ 'btn-secondary' if current_sort != 'desc' else 'btn-primary' }}"
+                style="padding: 5px 12px; font-size: 0.9rem;">由新到舊</a>
+            <a href="{{ url_for('main.history', sort='asc') }}"
+                class="btn btn-sm {{ 'btn-secondary' if current_sort != 'asc' else 'btn-primary' }}"
+                style="padding: 5px 12px; font-size: 0.9rem;">由舊到新</a>
         </div>
     </div>
 
@@ -30,19 +34,24 @@
                 <tbody>
                     {% for upload in uploads %}
                     <tr id="upload-row-{{ upload.id }}">
-                        <td><input type="checkbox" name="upload_ids" value="{{ upload.id }}" class="upload-checkbox"></td>
+                        <td><input type="checkbox" name="upload_ids" value="{{ upload.id }}" class="upload-checkbox">
+                        </td>
                         <td><strong>#{{ upload.id }}</strong></td>
                         <td>
                             <div style="font-weight: 500;">{{ upload.original_filename }}</div>
                         </td>
                         <td class="status-cell">
                             {% if upload.status == 'PROCESSING' %}
-                                <div style="width: 120px; background: #eee; height: 8px; border-radius: 4px; overflow: hidden; position: relative;">
-                                    <div class="progress-bar" style="width: {{ upload.progress }}%; background: var(--highlight); height: 100%; transition: width 0.4s;"></div>
+                            <div
+                                style="width: 120px; background: #eee; height: 8px; border-radius: 4px; overflow: hidden; position: relative;">
+                                <div class="progress-bar"
+                                    style="width: {{ upload.progress }}%; background: var(--highlight); height: 100%; transition: width 0.4s;">
                                 </div>
-                                <small class="progress-text" style="color: var(--primary-med);">{{ upload.progress }}%</small>
+                            </div>
+                            <small class="progress-text" style="color: var(--primary-med);">{{ upload.progress
+                                }}%</small>
                             {% else %}
-                                <span class="status-badge status-{{ upload.status }}">{{ upload.status }}</span>
+                            <span class="status-badge status-{{ upload.status }}">{{ upload.status }}</span>
                             {% endif %}
                         </td>
                         <td>{{ upload.upload_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
@@ -54,9 +63,10 @@
                         </td>
                         <td class="action-cell">
                             {% if upload.status == 'COMPLETED' %}
-                                <a href="{{ url_for('main.results', upload_id=upload.id) }}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85rem;">查看結果</a>
+                            <a href="{{ url_for('main.results', upload_id=upload.id) }}" class="btn btn-secondary"
+                                style="padding: 4px 10px; font-size: 0.85rem;">查看結果</a>
                             {% else %}
-                                <span style="color: #ccc; font-size: 0.85rem;">--</span>
+                            <span style="color: #ccc; font-size: 0.85rem;">--</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -70,12 +80,107 @@
                 </tbody>
             </table>
         </div>
-        
+
         <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
-            <button type="button" class="btn" style="background: #20c997; color: white;" onclick="submitTraining()">啟動模型訓練</button>
+            <button type="button" class="btn" style="background: #20c997; color: white;"
+                onclick="openTrainingModal()">啟動模型訓練</button>
             <button type="button" class="btn btn-danger" onclick="submitDeletion()">刪除選取項目</button>
         </div>
     </form>
+
+    <!-- 訓練設定彈窗 -->
+    <div id="training-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🎯 訓練設定</h2>
+                <button class="modal-close" onclick="closeTrainingModal()">&times;</button>
+            </div>
+            <form id="training-config-form" method="post" action="{{ url_for('main.start_training') }}">
+                <div class="modal-body">
+                    <!-- 隱藏欄位：儲存選取的 upload_ids -->
+                    <div id="hidden-upload-ids"></div>
+
+                    <!-- 模型選擇 -->
+                    <div class="form-group">
+                        <label style="font-weight: 600; margin-bottom: 0.75rem; display: block;">選擇模型</label>
+                        <div style="display: grid; gap: 0.75rem;">
+                            <label class="model-option selected" onclick="selectModel(this)">
+                                <input type="radio" name="model_type" value="yolov8n-cls" checked>
+                                <div class="model-option-header">
+                                    <span>🚀</span> YOLOv8n 分類
+                                </div>
+                                <div class="model-option-desc">輕量級，訓練快速，適合快速實驗</div>
+                            </label>
+                            <label class="model-option" onclick="selectModel(this)">
+                                <input type="radio" name="model_type" value="yolov8s-cls">
+                                <div class="model-option-header">
+                                    <span>⚡</span> YOLOv8s 分類
+                                </div>
+                                <div class="model-option-desc">標準版，精度與速度平衡</div>
+                            </label>
+                            <label class="model-option" onclick="selectModel(this)">
+                                <input type="radio" name="model_type" value="resnet18">
+                                <div class="model-option-header">
+                                    <span>🧠</span> ResNet18
+                                </div>
+                                <div class="model-option-desc">經典 CNN 架構，穩定可靠</div>
+                            </label>
+                            <label class="model-option" onclick="selectModel(this)">
+                                <input type="radio" name="model_type" value="efficientnet_b0">
+                                <div class="model-option-header">
+                                    <span>💎</span> EfficientNet-B0
+                                </div>
+                                <div class="model-option-desc">高效能 CNN，精度優秀</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 訓練參數 -->
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label style="font-weight: 600; margin-bottom: 0.75rem; display: block;">訓練參數</label>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="epochs">訓練輪數 (Epochs)</label>
+                                <input type="number" id="epochs" name="epochs" value="50" min="1" max="500">
+                            </div>
+                            <div class="form-group">
+                                <label for="batch_size">批次大小 (Batch Size)</label>
+                                <select id="batch_size" name="batch_size">
+                                    <option value="8">8</option>
+                                    <option value="16" selected>16</option>
+                                    <option value="32">32</option>
+                                    <option value="64">64</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="learning_rate">學習率 (Learning Rate)</label>
+                                <select id="learning_rate" name="learning_rate">
+                                    <option value="0.0001">0.0001</option>
+                                    <option value="0.001" selected>0.001</option>
+                                    <option value="0.01">0.01</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="image_size">圖片尺寸 (px)</label>
+                                <select id="image_size" name="image_size">
+                                    <option value="128">128</option>
+                                    <option value="224" selected>224</option>
+                                    <option value="256">256</option>
+                                    <option value="320">320</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeTrainingModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">開始訓練</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <div id="data-config" data-new-upload-id="{{ request.args.get('new_upload_id') }}"></div>
@@ -94,17 +199,38 @@
         return Array.from(document.querySelectorAll('.upload-checkbox:checked')).map(cb => cb.value);
     }
 
-    // 提交訓練
-    function submitTraining() {
+    // 開啟訓練設定彈窗
+    function openTrainingModal() {
         const selectedIds = getSelectedIds();
         if (selectedIds.length === 0) {
             alert('請至少選取一個項目來進行訓練。');
             return;
         }
-        const form = document.getElementById('history-form');
-        form.action = "{{ url_for('main.start_training') }}";
-        form.submit();
+
+        // 將選取的 ID 放入隱藏欄位
+        const hiddenContainer = document.getElementById('hidden-upload-ids');
+        hiddenContainer.innerHTML = selectedIds.map(id =>
+            `<input type="hidden" name="upload_ids" value="${id}">`
+        ).join('');
+
+        document.getElementById('training-modal').classList.add('active');
     }
+
+    // 關閉訓練設定彈窗
+    function closeTrainingModal() {
+        document.getElementById('training-modal').classList.remove('active');
+    }
+
+    // 模型選項選取效果
+    function selectModel(element) {
+        document.querySelectorAll('.model-option').forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+    }
+
+    // 點擊 Modal 外部關閉
+    document.getElementById('training-modal').addEventListener('click', function (e) {
+        if (e.target === this) closeTrainingModal();
+    });
 
     // 提交刪除
     function submitDeletion() {
@@ -145,7 +271,7 @@
                 startPolling(newUploadId);
             }
         }
-        
+
         // 掃描頁面上所有可能有進度條的行
         const rowsToUpdate = document.querySelectorAll('tr[id^="upload-row-"]');
         rowsToUpdate.forEach(row => {
@@ -172,7 +298,7 @@
                         console.error(`Error fetching status for upload ${uploadId}:`, error);
                         stopPolling(uploadId);
                     });
-            }, 2000); 
+            }, 2000);
 
             activeIntervals.set(uploadId, intervalId);
         }
@@ -189,12 +315,12 @@
             if (!row) return;
 
             const statusCell = row.querySelector('.status-cell');
-            
+
             if (data.status === 'PROCESSING' || data.status === 'PENDING') {
                 // 更新進度條
                 let progressBar = statusCell.querySelector('.progress-bar');
                 let progressText = statusCell.querySelector('.progress-text');
-                
+
                 // 如果原本沒有進度條 (例如剛從 PENDING 變 PROCESSING)，需要重建 HTML
                 if (!progressBar) {
                     statusCell.innerHTML = `
@@ -205,15 +331,15 @@
                     `;
                 } else {
                     progressBar.style.width = `${data.progress}%`;
-                    if(progressText) progressText.textContent = `${data.progress}%`;
+                    if (progressText) progressText.textContent = `${data.progress}%`;
                 }
             } else {
                 // 任務結束 (COMPLETED 或 FAILED)
                 stopPolling(data.id);
-                
+
                 // 更新狀態標籤
                 statusCell.innerHTML = `<span class="status-badge status-${data.status}">${data.status}</span>`;
-                
+
                 // 如果成功，更新操作按鈕
                 if (data.status === 'COMPLETED') {
                     const actionCell = row.querySelector('.action-cell');

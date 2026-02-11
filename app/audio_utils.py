@@ -40,18 +40,12 @@ def waveform_to_log_mel_spectrogram_patches(waveform, params):
         fft_length = 2 ** int(np.ceil(np.log(window_length_samples) / np.log(2.0)))
         num_spectrogram_bins = fft_length // 2 + 1
         
-        if params.tflite_compatible:
-            magnitude_spectrogram = tf.abs(tf.signal.stft(
-                signals=waveform,
-                frame_length=window_length_samples,
-                frame_step=hop_length_samples,
-                fft_length=fft_length))
-        else:
-            magnitude_spectrogram = tf.abs(tf.signal.stft(
-                signals=waveform,
-                frame_length=window_length_samples,
-                frame_step=hop_length_samples,
-                fft_length=fft_length))
+        # 計算幅度頻譜圖 (TFLite 相容性分支已移除，因為邏輯相同)
+        magnitude_spectrogram = tf.abs(tf.signal.stft(
+            signals=waveform,
+            frame_length=window_length_samples,
+            frame_step=hop_length_samples,
+            fft_length=fft_length))
 
         linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
             num_mel_bins=params.mel_bands,
@@ -86,7 +80,41 @@ def _square_law_demodulate(signal):
 
 # --- 核心繪圖函式 (已加入記憶體保護) ---
 
-def save_spectrogram(y, sr, out_path_display, out_path_training, spec_type='mel'):
+def save_spectrogram(y, sr, out_path_display, out_path_training, spec_type='mel', spec_params=None):
+    """
+    儲存頻譜圖。
+    
+    參數:
+        y: 音訊資料
+        sr: 取樣率
+        out_path_display: 顯示用頻譜圖路徑
+        out_path_training: 訓練用頻譜圖路徑
+        spec_type: 頻譜圖類型 ('mel', 'stft', 'classic_demon', 'envelope_spectrum', 'yamnet_log_mel')
+        spec_params: 頻譜圖參數字典，包含:
+            - n_fft: FFT window size (預設 1024)
+            - hop_length: 步幅 (預設 512)
+            - window_type: 窗函數類型 (預設 'hann')
+            - n_mels: Mel 濾波器數量 (預設 128)
+            - f_min: 最低頻率 (預設 0)
+            - f_max: 最高頻率 (預設 sr/2)
+            - power: 功率指數 (預設 2.0)
+    """
+    # 預設參數
+    if spec_params is None:
+        spec_params = {}
+    
+    n_fft = spec_params.get('n_fft', 1024)
+    hop_length = spec_params.get('hop_length', 512)
+    window_type = spec_params.get('window_type', 'hann')
+    n_mels = spec_params.get('n_mels', 128)
+    f_min = spec_params.get('f_min', 0)
+    f_max = spec_params.get('f_max', 0)
+    power = spec_params.get('power', 2.0)
+    
+    # 如果 f_max 為 0，使用 Nyquist 頻率
+    if f_max <= 0:
+        f_max = sr / 2
+    
     # 分流處理特殊圖形
     if spec_type == 'classic_demon':
         save_classic_demon_plot(y, sr, out_path_display, out_path_training)
@@ -104,20 +132,37 @@ def save_spectrogram(y, sr, out_path_display, out_path_training, spec_type='mel'
         fig, ax = plt.subplots(figsize=(6, 4))
         
         if spec_type == 'mel':
-            S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=sr/2)
+            S = librosa.feature.melspectrogram(
+                y=y, sr=sr, 
+                n_fft=n_fft,
+                hop_length=hop_length,
+                win_length=n_fft,
+                window=window_type,
+                n_mels=n_mels, 
+                fmin=f_min,
+                fmax=f_max,
+                power=power
+            )
             S_db = librosa.power_to_db(S, ref=np.max)
             display_data = S_db
         elif spec_type == 'stft':
-            n_fft = 1024
-            hop_length = 512
-            D = librosa.stft(y, n_fft=n_fft, hop_length=hop_length)
-            S_db = librosa.amplitude_to_db(np.abs(D), ref=np.max)
+            D = librosa.stft(
+                y, 
+                n_fft=n_fft, 
+                hop_length=hop_length,
+                win_length=n_fft,
+                window=window_type
+            )
+            if power == 2.0:
+                S_db = librosa.power_to_db(np.abs(D)**2, ref=np.max)
+            else:
+                S_db = librosa.amplitude_to_db(np.abs(D), ref=np.max)
             display_data = S_db
         else:
             return
 
         # 1. 繪製顯示用圖 (包含座標軸與標題)
-        librosa.display.specshow(display_data, sr=sr, x_axis='time', y_axis='mel' if spec_type=='mel' else 'hz', ax=ax)
+        librosa.display.specshow(display_data, sr=sr, x_axis='time', y_axis='mel' if spec_type=='mel' else 'hz', ax=ax, hop_length=hop_length)
         ax.set_title(f'{spec_type.capitalize()} Spectrogram')
         fig.colorbar(ax.collections[0], ax=ax, format='%+2.0f dB')
         plt.tight_layout()
@@ -126,7 +171,7 @@ def save_spectrogram(y, sr, out_path_display, out_path_training, spec_type='mel'
         # 2. 清除內容並繪製訓練用圖 (無座標軸純圖)
         fig.clear()
         ax = fig.add_subplot(111)
-        librosa.display.specshow(display_data, sr=sr, ax=ax)
+        librosa.display.specshow(display_data, sr=sr, ax=ax, hop_length=hop_length)
         ax.axis('off')
         fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
         plt.savefig(out_path_training, bbox_inches='tight', pad_inches=0, dpi=100)
@@ -140,9 +185,15 @@ def save_spectrogram(y, sr, out_path_display, out_path_training, spec_type='mel'
         plt.close('all')
 
 def save_yamnet_log_mel_plot(y, sr, out_path_display, out_path_training):
+    """繪製 YAMNet 格式的 Log Mel 頻譜圖"""
     fig = None
     try:
         params = YAMNetParams()
+        
+        # 確保取樣率為 16000 Hz (YAMNet 要求)
+        if sr != params.sample_rate:
+            y = librosa.resample(y, orig_sr=sr, target_sr=int(params.sample_rate))
+        
         log_mel_spectrogram = waveform_to_log_mel_spectrogram_patches(y, params)
         data_to_plot = np.array(log_mel_spectrogram).T
 
@@ -158,6 +209,8 @@ def save_yamnet_log_mel_plot(y, sr, out_path_display, out_path_training):
         ax.axis('off')
         fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
         plt.savefig(out_path_training, dpi=100, bbox_inches='tight', pad_inches=0)
+    except Exception as e:
+        print(f"繪製 YAMNet Log Mel 頻譜圖時發生錯誤: {e}")
     finally:
         if fig: plt.close(fig)
         plt.close('all')
@@ -244,9 +297,12 @@ def save_envelope_spectrum_plot(segment, sr, out_path_display, out_path_training
 
 # --- 記憶體優化處理流程 ---
 
-def process_large_audio(filepath, result_dir, spec_type, segment_duration=2.0, overlap_ratio=0.5, target_sr=None, is_mono=True, progress_callback=None):
+def process_large_audio(filepath, result_dir, spec_type, segment_duration=2.0, overlap_ratio=0.5, target_sr=None, is_mono=True, progress_callback=None, spec_params=None):
     """
     以逐段精確載入的方式處理大型音訊檔案，確保所有片段長度一致且節省記憶體。
+    
+    參數:
+        spec_params: 頻譜圖參數字典，傳遞給 save_spectrogram 函式
     """
     all_results = []
     basename = f"{os.path.splitext(os.path.basename(filepath))[0]}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -270,7 +326,6 @@ def process_large_audio(filepath, result_dir, spec_type, segment_duration=2.0, o
             sr = target_sr if target_sr else original_sr
 
         frame_length = int(segment_duration * sr)
-        # hop_length = int(frame_length * (1 - overlap_ratio)) # 未使用變數
 
         if total_samples < frame_length:
             print("警告：音訊檔案總長度小於設定的單一片段長度。")
@@ -314,12 +369,15 @@ def process_large_audio(filepath, result_dir, spec_type, segment_duration=2.0, o
             display_spec_path = os.path.join(result_dir, display_spec_filename)
             training_spec_path = os.path.join(result_dir, training_spec_filename)
             
-            # 3. 儲存切割音檔
-            wavfile.write(audio_path, sr, (y_segment.T if y_segment.ndim > 1 else y_segment * 32767).astype(np.int16))
+            # 3. 儲存切割音檔 (確保正確處理多聲道)
+            if y_segment.ndim > 1:
+                y_segment = librosa.to_mono(y_segment)
+            audio_int16 = (y_segment * 32767).astype(np.int16)
+            wavfile.write(audio_path, sr, audio_int16)
             
             # 4. 繪製頻譜圖 (這裡最耗記憶體)
             mono_segment = librosa.to_mono(y_segment) if y_segment.ndim > 1 else y_segment
-            save_spectrogram(mono_segment, sr, display_spec_path, training_spec_path, spec_type)
+            save_spectrogram(mono_segment, sr, display_spec_path, training_spec_path, spec_type, spec_params)
             
             # 5. 加入結果列表
             all_results.append({

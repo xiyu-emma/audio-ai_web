@@ -16,7 +16,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <a href="{{ url_for('main.index') }}" class="brand-logo">
-                🐋 OceanAI <span class="brand-subtitle">聲景分析平台</span>
+                🐋 AIWeb <span class="brand-subtitle">聲景分析平台</span>
             </a>
             <div class="nav-links">
                 <a href="{{ url_for('main.index') }}" class="{{ 'active' if request.endpoint == 'main.index' }}">上傳分析</a>
@@ -31,7 +31,7 @@
     </main>
 
     <footer class="footer">
-        <p>&copy; 2026 OceanAI Analysis Platform. All rights reserved.</p>
+        <p>&copy; All rights reserved.</p>
     </footer>
 
     {% block scripts %}{% endblock %}
