@@ -14,7 +14,7 @@ from werkzeug.utils import secure_filename
 # 從 __init__.py 引入 db 和 celery 實例
 from . import db, celery
 # 引入所有相關模型
-from .models import AudioInfo, Result, Label, TrainingRun, ProjectInfo, PointInfo, CetaceanInfo
+from .models import AudioInfo, Result, Label, TrainingRun, ProjectInfo, PointInfo, CetaceanInfo, BBoxAnnotation
 
 main_bp = Blueprint('main', __name__)
 
@@ -198,6 +198,80 @@ def download_dataset_zip(upload_id):
                 ])
             
             zf.writestr('labels.csv', csv_buffer.getvalue())
+
+            # C. 生成 bbox_annotations.csv (框選標記資料)
+            bbox_csv_buffer = io.StringIO()
+            bbox_csv_writer = csv.writer(bbox_csv_buffer)
+            bbox_csv_writer.writerow([
+                'filename', 'segment_index', 'label', 
+                'time_start_sec', 'time_end_sec', 
+                'freq_min_hz', 'freq_max_hz'
+            ])
+            
+            # 取得頻譜圖參數以計算頻率軸
+            try:
+                sample_rate = params.get('sample_rate', 'None')
+                if sample_rate == 'None' or sample_rate is None:
+                    # 如果沒有指定取樣率，嘗試從第一個音訊檔讀取
+                    first_audio = results_all[0] if results_all else None
+                    if first_audio and first_audio.audio_filename:
+                        first_audio_path = os.path.join(folder_path, first_audio.audio_filename)
+                        if os.path.exists(first_audio_path):
+                            import soundfile as sf
+                            info = sf.info(first_audio_path)
+                            sample_rate = info.samplerate
+                        else:
+                            sample_rate = 44100  # 預設值
+                    else:
+                        sample_rate = 44100
+                else:
+                    sample_rate = float(sample_rate)
+                
+                f_min = float(params.get('f_min', 0))
+                f_max = float(params.get('f_max', 0))
+                
+                # 如果 f_max 為 0，使用 Nyquist 頻率
+                if f_max <= 0:
+                    f_max = sample_rate / 2
+            except:
+                sample_rate = 44100
+                f_min = 0
+                f_max = sample_rate / 2
+            
+            # 查詢所有框選標記
+            bbox_count = 0
+            for i, res in enumerate(results_all):
+                annotations = BBoxAnnotation.query.filter_by(result_id=res.id).all()
+                
+                if annotations:
+                    fname = res.spectrogram_training_filename
+                    csv_filename = f"images/{fname}"
+                    segment_start_time = i * hop_length
+                    
+                    for bbox in annotations:
+                        # 計算時間軸（秒）
+                        time_start = segment_start_time + (bbox.x * segment_duration)
+                        time_end = segment_start_time + ((bbox.x + bbox.width) * segment_duration)
+                        
+                        # 計算頻率軸（Hz）
+                        # 注意：Y 軸需要反轉（Y=0 是圖片頂部=高頻，Y=1 是圖片底部=低頻）
+                        freq_max_bbox = f_min + (1 - bbox.y) * (f_max - f_min)
+                        freq_min_bbox = f_min + (1 - (bbox.y + bbox.height)) * (f_max - f_min)
+                        
+                        bbox_csv_writer.writerow([
+                            csv_filename,
+                            i,
+                            bbox.label,
+                            f"{time_start:.3f}",
+                            f"{time_end:.3f}",
+                            f"{freq_min_bbox:.2f}",
+                            f"{freq_max_bbox:.2f}"
+                        ])
+                        bbox_count += 1
+            
+            # 只有在有框選標記時才加入檔案
+            if bbox_count > 0:
+                zf.writestr('bbox_annotations.csv', bbox_csv_buffer.getvalue())
 
         memory_file.seek(0)
         download_filename = f"dataset_{upload.id}_{secure_filename(upload.file_name)}.zip"
@@ -540,3 +614,71 @@ def handle_labels():
         db.session.add(new_label)
         db.session.commit()
         return jsonify({'id': new_label.id, 'name': new_label.name}), 201
+
+# --- 進階框選標記 ---
+
+@main_bp.route('/label-advanced/<int:upload_id>')
+def label_advanced_page(upload_id):
+    """渲染進階框選標記頁面 - 一張圖一頁"""
+    upload_record = AudioInfo.query.get_or_404(upload_id)
+    index = request.args.get('index', 0, type=int)
+
+    results_all = Result.query.filter_by(upload_id=upload_id).order_by(Result.id.asc()).all()
+    total = len(results_all)
+
+    if total == 0:
+        return "此分析尚無頻譜圖結果。", 404
+
+    # 確保 index 在合法範圍
+    index = max(0, min(index, total - 1))
+    current_result = results_all[index]
+
+    return render_template(
+        'label_advanced.html',
+        upload=upload_record,
+        result=current_result,
+        current_index=index,
+        total=total
+    )
+
+@main_bp.route('/api/bbox/<int:result_id>', methods=['GET'])
+def get_bbox_annotations(result_id):
+    """取得一張頻譜圖的所有框選標記"""
+    Result.query.get_or_404(result_id)
+    annotations = BBoxAnnotation.query.filter_by(result_id=result_id).all()
+    return jsonify([
+        {
+            'id': a.id,
+            'label': a.label,
+            'x': a.x,
+            'y': a.y,
+            'width': a.width,
+            'height': a.height
+        }
+        for a in annotations
+    ])
+
+@main_bp.route('/api/bbox/<int:result_id>', methods=['POST'])
+def save_bbox_annotations(result_id):
+    """儲存一張頻譜圖的所有框選標記 (先刪後寫)"""
+    Result.query.get_or_404(result_id)
+    data = request.get_json()
+    boxes = data.get('boxes', [])
+
+    # 刪除舊的標記
+    BBoxAnnotation.query.filter_by(result_id=result_id).delete()
+
+    # 寫入新的標記
+    for box in boxes:
+        annotation = BBoxAnnotation(
+            result_id=result_id,
+            label=box['label'],
+            x=float(box['x']),
+            y=float(box['y']),
+            width=float(box['width']),
+            height=float(box['height'])
+        )
+        db.session.add(annotation)
+
+    db.session.commit()
+    return jsonify({'success': True, 'count': len(boxes)})

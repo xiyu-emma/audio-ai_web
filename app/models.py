@@ -260,3 +260,21 @@ class TrainingRun(db.Model):
         params = self.get_params()
         model_type = params.get('model_type', 'yolov8n-cls')
         return model_names.get(model_type, model_type)
+
+# --- 6. 框選標記表 (BBoxAnnotation) ---
+
+class BBoxAnnotation(db.Model):
+    """
+    儲存進階標記頁面的框選標記資料。
+    座標使用百分比 (0~1)，不受圖片縮放影響。
+    """
+    __tablename__ = 'bbox_annotations'
+    id = db.Column(db.Integer, primary_key=True)
+    result_id = db.Column(db.Integer, db.ForeignKey('results.id'), nullable=False, comment='關聯的頻譜圖')
+    label = db.Column(db.String(100), nullable=False, comment='標籤名稱')
+    x = db.Column(db.Float, nullable=False, comment='左上角 X (百分比)')
+    y = db.Column(db.Float, nullable=False, comment='左上角 Y (百分比)')
+    width = db.Column(db.Float, nullable=False, comment='寬度 (百分比)')
+    height = db.Column(db.Float, nullable=False, comment='高度 (百分比)')
+
+    result = db.relationship('Result', backref=db.backref('bbox_annotations', cascade='all, delete-orphan'))

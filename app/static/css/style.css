@@ -519,6 +519,55 @@ select:focus {
     white-space: nowrap;
 }
 
+/* --- 上傳模式切換 Tab --- */
+.upload-mode-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f1f5f9;
+}
+
+.upload-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.upload-tab:hover {
+    background: rgba(0, 136, 145, 0.08);
+    color: var(--primary-med);
+}
+
+.upload-tab.active {
+    background: var(--white);
+    color: var(--primary-med);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.upload-tab svg {
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.upload-tab.active svg {
+    opacity: 1;
+}
+
 /* === 分析參數資訊區塊 === */
 .params-info-section {
     background: linear-gradient(135deg, #f8fafc 0%, #f0f7ff 100%);

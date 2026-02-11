@@ -119,6 +119,16 @@ animation: fadein 0.5s, fadeout 0.5s 2.5s;
             </div>
         </div>
         <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('main.label_advanced_page', upload_id=upload.id) }}" class="btn btn-primary"
+                style="font-size: 0.9rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    style="margin-right: 4px;">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+                進階框選標記
+            </a>
             <a href="{{ url_for('main.results', upload_id=upload.id) }}" class="btn btn-secondary">返回結果</a>
             <a href="{{ url_for('main.history') }}" class="btn btn-secondary">歷史紀錄</a>
         </div>

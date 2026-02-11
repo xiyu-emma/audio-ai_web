@@ -11,9 +11,36 @@
 
     <form method="post" action="{{ url_for('main.upload') }}" enctype="multipart/form-data">
         <div class="form-group">
-            <label for="files">選擇音訊檔案 (可多選)</label>
-            <input type="file" id="files" name="files" accept=".wav,.mp3" required multiple
-                style="padding: 1rem; border: 2px dashed #cbd5e1; background: #f8fafc;">
+            <label>選擇上傳方式</label>
+            <div class="upload-mode-tabs">
+                <button type="button" class="upload-tab active" data-mode="file" onclick="switchUploadMode('file')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                        <polyline points="13 2 13 9 20 9"></polyline>
+                    </svg>
+                    檔案上傳
+                </button>
+                <button type="button" class="upload-tab" data-mode="folder" onclick="switchUploadMode('folder')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    資料夾上傳
+                </button>
+            </div>
+
+            <div id="fileUploadArea">
+                <input type="file" id="files" name="files" accept=".wav,.mp3" required multiple
+                    style="padding: 1rem; border: 2px dashed #cbd5e1; background: #f8fafc;">
+            </div>
+
+            <div id="folderUploadArea" style="display: none;">
+                <input type="file" id="folderInput" accept=".wav,.mp3" webkitdirectory directory multiple
+                    style="padding: 1rem; border: 2px dashed #cbd5e1; background: #f8fafc;">
+                <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);">
+                    系統將自動篩選資料夾中的音訊檔案 (.wav, .mp3)
+                </p>
+            </div>
+
             <div id="fileList" class="file-list-preview"></div>
         </div>
 
@@ -178,6 +205,98 @@
 </div>
 
 <script>
+    // --- 上傳模式切換 ---
+    let currentUploadMode = 'file';
+
+    function switchUploadMode(mode) {
+        currentUploadMode = mode;
+        const fileArea = document.getElementById('fileUploadArea');
+        const folderArea = document.getElementById('folderUploadArea');
+        const fileInput = document.getElementById('files');
+        const folderInput = document.getElementById('folderInput');
+        const fileListDiv = document.getElementById('fileList');
+
+        // 切換 Tab 樣式
+        document.querySelectorAll('.upload-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.getAttribute('data-mode') === mode);
+        });
+
+        // 清除預覽
+        fileListDiv.innerHTML = '';
+
+        if (mode === 'file') {
+            fileArea.style.display = '';
+            folderArea.style.display = 'none';
+            // 讓 file input 成為表單提交的欄位
+            fileInput.name = 'files';
+            fileInput.required = true;
+            folderInput.removeAttribute('name');
+            folderInput.required = false;
+            // 清除資料夾選擇
+            folderInput.value = '';
+            // 移除動態產生的隱藏 input
+            removeHiddenFileInputs();
+        } else {
+            fileArea.style.display = 'none';
+            folderArea.style.display = '';
+            // 讓 folder input 先不設 name (稍後由隱藏 input 處理)
+            folderInput.removeAttribute('name');
+            folderInput.required = false;
+            fileInput.name = '';
+            fileInput.required = false;
+            // 清除檔案選擇
+            fileInput.value = '';
+            // 移除動態產生的隱藏 input
+            removeHiddenFileInputs();
+        }
+    }
+
+    function removeHiddenFileInputs() {
+        document.querySelectorAll('.hidden-folder-file').forEach(el => el.remove());
+    }
+
+    // 音訊檔副檔名判斷
+    const AUDIO_EXTENSIONS = ['.wav', '.mp3'];
+
+    function isAudioFile(filename) {
+        const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+        return AUDIO_EXTENSIONS.includes(ext);
+    }
+
+    // 共用的檔案預覽函式
+    function renderFilePreview(fileListDiv, files, skippedCount) {
+        fileListDiv.innerHTML = '';
+        if (files.length === 0 && skippedCount === 0) return;
+
+        const listTitle = document.createElement('div');
+        listTitle.className = 'file-list-title';
+        let titleText = '<strong>' + files.length + ' 個音訊檔案</strong>';
+        if (skippedCount > 0) {
+            titleText += '<span style="color: var(--text-light); font-size: 0.85rem; margin-left: 0.5rem;">'
+                + '(' + skippedCount + ' 個非音訊檔案已略過)</span>';
+        }
+        listTitle.innerHTML = titleText;
+        fileListDiv.appendChild(listTitle);
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-list-item';
+            const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+            const iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
+                + '<path d="M9 18V5l12-2v13"></path>'
+                + '<circle cx="6" cy="18" r="3"></circle>'
+                + '<circle cx="18" cy="16" r="3"></circle>'
+                + '</svg>';
+            // 如果有 webkitRelativePath，顯示相對路徑
+            const displayName = file.webkitRelativePath || file.name;
+            fileItem.innerHTML = '<span class="file-icon">' + iconSvg + '</span>'
+                + '<span class="file-name">' + displayName + '</span>'
+                + '<span class="file-size">' + sizeMB + ' MB</span>';
+            fileListDiv.appendChild(fileItem);
+        }
+    }
+
     // 頻譜圖參數區塊展開/收合功能
     function toggleSpecParams() {
         const content = document.getElementById('specParamsContent');
@@ -235,33 +354,51 @@
         specTypeSelect.addEventListener('change', updateParamsVisibility);
         updateParamsVisibility();
 
-        // 多檔案選擇預覽
+        // --- 檔案上傳：多檔案選擇預覽 ---
         const filesInput = document.getElementById('files');
         const fileListDiv = document.getElementById('fileList');
 
         filesInput.addEventListener('change', function () {
-            fileListDiv.innerHTML = '';
-            const files = this.files;
+            const files = Array.from(this.files);
+            renderFilePreview(fileListDiv, files, 0);
+        });
 
-            if (files.length === 0) return;
+        // --- 資料夾上傳：檔案篩選與預覽 ---
+        const folderInput = document.getElementById('folderInput');
+        const form = document.querySelector('form');
 
-            const listTitle = document.createElement('div');
-            listTitle.className = 'file-list-title';
-            listTitle.innerHTML = `<strong>已選擇 ${files.length} 個檔案：</strong>`;
-            fileListDiv.appendChild(listTitle);
+        folderInput.addEventListener('change', function () {
+            removeHiddenFileInputs();
+            const allFiles = Array.from(this.files);
+            const audioFiles = allFiles.filter(f => isAudioFile(f.name));
+            const skippedCount = allFiles.length - audioFiles.length;
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const fileItem = document.createElement('div');
-                fileItem.className = 'file-list-item';
+            renderFilePreview(fileListDiv, audioFiles, skippedCount);
 
-                const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-                fileItem.innerHTML = `
-                    <span class="file-icon">🎵</span>
-                    <span class="file-name">${file.name}</span>
-                    <span class="file-size">${sizeMB} MB</span>
-                `;
-                fileListDiv.appendChild(fileItem);
+            // 使用 DataTransfer 建立篩選後的檔案列表，透過隱藏 input 提交
+            if (audioFiles.length > 0) {
+                const dt = new DataTransfer();
+                audioFiles.forEach(f => dt.items.add(f));
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'file';
+                hiddenInput.name = 'files';
+                hiddenInput.multiple = true;
+                hiddenInput.files = dt.files;
+                hiddenInput.style.display = 'none';
+                hiddenInput.className = 'hidden-folder-file';
+                form.appendChild(hiddenInput);
+            }
+        });
+
+        // 表單提交前驗證
+        form.addEventListener('submit', function (e) {
+            if (currentUploadMode === 'folder') {
+                const hiddenInputs = document.querySelectorAll('.hidden-folder-file');
+                if (hiddenInputs.length === 0 || hiddenInputs[0].files.length === 0) {
+                    e.preventDefault();
+                    alert('請選擇一個包含音訊檔案 (.wav, .mp3) 的資料夾');
+                    return false;
+                }
             }
         });
     });
