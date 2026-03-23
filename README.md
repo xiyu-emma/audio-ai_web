@@ -16,12 +16,13 @@
 - 隨需載入模型機制，節省資源
 
 ### 標記與驗證系統
-- 提供 Web 介面檢視分析結果
+- 提供 Web 介面檢視分析結果（全新海洋主題專業極簡風格介面）
 - 支援人工標記與修正 AI 預測結果
 - **進階框選標記**：在頻譜圖上繪製矩形框標記特定聲紋區域
   - 9 種標籤類別（上升型、下降型、U型、倒U型、嘎搭聲、突發脈衝、船舶、噪音、打樁）
   - 即時繪製與刪除框選
   - 鍵盤快捷鍵支援（S=儲存、方向鍵=翻頁、Ctrl+Z=復原）
+- **互動式放大檢視**：支援在圖片放大對話框(Modal)中直接進行標記，並可直接導航至前後頻譜圖。
 
 ### 模型訓練
 - 利用標記好的資料，直接在平台上一鍵啟動模型訓練
@@ -101,14 +102,24 @@
 │   │   ├── label_advanced.html   # 進階框選標記介面
 │   │   ├── training_status.html  # 訓練任務狀態
 │   │   └── training_report.html  # 訓練詳細報告
+│   ├── routers/              # 路由視圖目錄
+│   │   ├── __init__.py
+│   │   ├── api.py            # API 介面路由
+│   │   ├── download.py       # 下載相關路由
+│   │   ├── labels.py         # 標記相關路由
+│   │   ├── pages.py          # 網頁視圖路由
+│   │   ├── status.py         # 狀態檢查路由
+│   │   ├── training.py       # 訓練相關路由
+│   │   └── upload.py         # 上傳相關路由
 │   ├── __init__.py           # Flask App 初始化
 │   ├── ai_model.py           # AI 推論核心邏輯
 │   ├── audio_utils.py        # 音訊處理工具庫
-│   ├── main.py               # 主要路由與視圖函式
+│   ├── main_router.py        # 註冊所有路由的核心檔案
 │   ├── models.py             # 資料庫模型定義
 │   └── tasks.py              # Celery 背景任務
 ├── docker-compose.yml        # Docker 服務編排配置
 ├── Dockerfile                # Web Service 容器建置檔
+├── main.py                   # 應用程式啟動入口
 └── requirements.txt          # Python 專案依賴套件
 ```
 

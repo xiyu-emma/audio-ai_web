@@ -159,7 +159,8 @@ def process_audio_task(self, audio_id):
                 {"id": audio_id}
             )
             db.session.commit()
-        except:
+        except Exception as rollback_error:
+            print(f"狀態更新失敗: {rollback_error}")
             db.session.rollback()
         raise
     finally:
@@ -1027,7 +1028,8 @@ def auto_label_task(upload_id, model_path, model_type='yolo', classes_str=''):
                 parent = os.path.dirname(model_path)
                 if not os.listdir(parent):
                     os.rmdir(parent)
-            except: pass
+            except Exception:
+                pass  # 静默忽略目錄清理錯誤
 
 
 # --- 任務 3b: AI 自動標記 V2 (使用已知類別資訊) ---
