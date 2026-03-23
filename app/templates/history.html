@@ -82,6 +82,7 @@
         </div>
 
         <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
+            <button type="button" class="btn btn-secondary" onclick="openImportModal()">匯入 Excel 標記</button>
             <button type="button" class="btn" style="background: #20c997; color: white;"
                 onclick="openTrainingModal()">啟動模型訓練</button>
             <button type="button" class="btn btn-danger" onclick="submitDeletion()">刪除選取項目</button>
@@ -180,6 +181,49 @@
                 </div>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- 匯入 Excel 標記設定彈窗 -->
+<div id="import-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📊 匯入 Excel 標記</h2>
+            <button class="modal-close" onclick="closeImportModal()">&times;</button>
+        </div>
+        <form id="import-config-form" onsubmit="submitImportExcel(event)">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="importLabelSelect" style="font-weight: 600; margin-bottom: 0.75rem; display: block;">請選擇要套用的標籤</label>
+                    <select id="importLabelSelect" class="form-select" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="whale" selected>1. 鯨魚 (Whale)</option>
+                        <option value="unknown">0. 未知</option>
+                        <optgroup label="鯨豚聲紋">
+                            <option value="whale_upsweep">10. 上升型 (Upsweep)</option>
+                            <option value="whale_downsweep">11. 下降型 (Downsweep)</option>
+                            <option value="whale_concave">12. U型 (Concave)</option>
+                            <option value="whale_convex">13. 倒U型 (Convex)</option>
+                            <option value="whale_sine">14. sin型 (Sine)</option>
+                            <option value="whale_click">15. 嘎搭聲 (Click)</option>
+                            <option value="whale_burst">16. 突發脈衝聲 (Burst)</option>
+                        </optgroup>
+                        <optgroup label="環境與干擾">
+                            <option value="noise">90. 環境噪音 (Noise)</option>
+                            <option value="ship">91. 船舶 (Ship)</option>
+                            <option value="piling">92. 風機打樁 (Piling)</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label for="excelModalUploadInput" style="font-weight: 600; margin-bottom: 0.75rem; display: block;">選擇 Excel 檔案 (可多選)</label>
+                    <input type="file" id="excelModalUploadInput" multiple accept=".xlsx" style="width: 100%;" required />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeImportModal()">取消</button>
+                <button type="submit" class="btn btn-primary" id="btnSubmitImport">開始匯入</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -349,5 +393,66 @@
             }
         }
     });
+
+    // 點擊 Modal 外部關閉
+    document.getElementById('import-modal').addEventListener('click', function (e) {
+        if (e.target === this) closeImportModal();
+    });
+
+    // 開啟/關閉匯入彈窗
+    function openImportModal() {
+        document.getElementById('import-modal').classList.add('active');
+    }
+    
+    function closeImportModal() {
+        document.getElementById('import-modal').classList.remove('active');
+        document.getElementById('excelModalUploadInput').value = ''; // Reset file input
+    }
+
+    // 處理 Excel 上傳表單提交
+    async function submitImportExcel(event) {
+        event.preventDefault();
+        
+        const files = document.getElementById('excelModalUploadInput').files;
+        if (files.length === 0) return;
+        
+        const selectedLabel = document.getElementById('importLabelSelect').value;
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+        formData.append('default_label', selectedLabel);
+
+        const btn = document.getElementById('btnSubmitImport');
+        const originalText = btn.innerText;
+        btn.innerText = '匯入中...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/import_excel', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            if (response.ok) {
+                let msg = `成功處理 ${data.success_count} 個檔案，共新增 ${data.total_labels} 個標記。\n`;
+                if (data.errors && data.errors.length > 0) {
+                    msg += `\n請注意以下錯誤/警告：\n${data.errors.join('\n')}`;
+                }
+                alert(msg);
+                closeImportModal();
+            } else {
+                alert(`匯入失敗: ${data.error || '未知錯誤'}`);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('網路錯誤，無法匯入');
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
 </script>
 {% endblock %}

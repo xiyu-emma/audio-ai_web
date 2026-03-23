@@ -123,23 +123,24 @@ justify-content: center;
 display: flex;
 }
 .zoom-modal-img-container {
-position: relative;
-display: inline-block;
-width: 90vw;
-height: 80vh;
-border-radius: 4px;
-box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-animation: zoomIn 0.3s ease;
-background: #111;
-display: flex;
-align-items: center;
-justify-content: center;
+    position: relative;
+    display: inline-flex;
+    max-width: 90vw;
+    max-height: 80vh;
+    border-radius: 4px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    animation: zoomIn 0.3s ease;
+    background: #111;
+    align-items: center;
+    justify-content: center;
 }
 .zoom-modal-img {
-display: block;
-width: 100%;
-height: 100%;
-object-fit: contain;
+    display: block;
+    max-width: 90vw;
+    max-height: 80vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
 }
 /* 放大鏡框框樣式 */
 .img-magnifier-glass {
@@ -219,6 +220,12 @@ to { transform: scale(1); opacity: 1; }
             </div>
         </div>
         <div style="display: flex; gap: 10px;">
+            <button onclick="clearAllLabels({{ upload.id }})" class="btn" style="background-color: #ef4444; color: white; font-size: 0.9rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: text-bottom;">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>清空標記
+            </button>
             <a href="{{ url_for('main.label_advanced_page', upload_id=upload.id) }}" class="btn btn-primary"
                 style="font-size: 0.9rem;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -287,15 +294,16 @@ to { transform: scale(1); opacity: 1; }
                 <select class="label-select {{ 'labeled' if item.event_type and item.event_type != 0 else '' }}"
                     onchange="updateLabel({{ item.id }}, this)">
                     <option value="0" {{ 'selected' if item.event_type==0 }}>0. 未知</option>
+                    <option value="1" {{ 'selected' if item.event_type==1 }}>1. 鯨魚 (Whale)</option>
 
                     <optgroup label="鯨豚聲紋">
-                        <option value="1" {{ 'selected' if item.event_type==1 }}>1. 上升型 (Upsweep)</option>
-                        <option value="2" {{ 'selected' if item.event_type==2 }}>2. 下降型 (Downsweep)</option>
-                        <option value="3" {{ 'selected' if item.event_type==3 }}>3. U型 (Concave)</option>
-                        <option value="4" {{ 'selected' if item.event_type==4 }}>4. 倒U型 (Convex)</option>
-                        <option value="6" {{ 'selected' if item.event_type==6 }}>6. sin型 (Sine)</option>
-                        <option value="7" {{ 'selected' if item.event_type==7 }}>7. 嘎搭聲 (Click)</option>
-                        <option value="8" {{ 'selected' if item.event_type==8 }}>8. 突發脈衝聲 (Burst)</option>
+                        <option value="10" {{ 'selected' if item.event_type==10 }}>10. 上升型 (Upsweep)</option>
+                        <option value="11" {{ 'selected' if item.event_type==11 }}>11. 下降型 (Downsweep)</option>
+                        <option value="12" {{ 'selected' if item.event_type==12 }}>12. U型 (Concave)</option>
+                        <option value="13" {{ 'selected' if item.event_type==13 }}>13. 倒U型 (Convex)</option>
+                        <option value="14" {{ 'selected' if item.event_type==14 }}>14. sin型 (Sine)</option>
+                        <option value="15" {{ 'selected' if item.event_type==15 }}>15. 嘎搭聲 (Click)</option>
+                        <option value="16" {{ 'selected' if item.event_type==16 }}>16. 突發脈衝聲 (Burst)</option>
                     </optgroup>
 
                     <optgroup label="環境與干擾">
@@ -318,8 +326,12 @@ to { transform: scale(1); opacity: 1; }
         {% endif %}
 
         <span class="btn"
-            style="background: white; border: 1px solid #ddd; cursor: default; color: var(--primary-dark);">
-            {{ pagination.page }} / {{ pagination.pages }}
+            style="background: white; border: 1px solid #ddd; color: var(--primary-dark); display: flex; align-items: center; padding: 4px 10px; gap: 5px;">
+            <input type="number" value="{{ pagination.page }}" min="1" max="{{ pagination.pages }}"
+                style="width: 50px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 2px;"
+                onkeydown="if(event.key === 'Enter') { let u = new URL(window.location.href); u.searchParams.set('page', this.value); window.location.href = u.href; }"
+                onchange="let u = new URL(window.location.href); u.searchParams.set('page', this.value); window.location.href = u.href;">
+            / {{ pagination.pages }}
         </span>
 
         {% if pagination.has_next %}
@@ -347,14 +359,15 @@ to { transform: scale(1); opacity: 1; }
             <select id="modalLabelSelect" class="label-select"
                 style="min-width: 150px; padding: 6px; font-size: 0.9rem;" onchange="updateLabelFromModal(this)">
                 <option value="0">0. 未知</option>
+                <option value="1">1. 鯨魚 (Whale)</option>
                 <optgroup label="鯨豚聲紋">
-                    <option value="1">1. 上升型 (Upsweep)</option>
-                    <option value="2">2. 下降型 (Downsweep)</option>
-                    <option value="3">3. U型 (Concave)</option>
-                    <option value="4">4. 倒U型 (Convex)</option>
-                    <option value="6">6. sin型 (Sine)</option>
-                    <option value="7">7. 嘎搭聲 (Click)</option>
-                    <option value="8">8. 突發脈衝聲 (Burst)</option>
+                    <option value="10">10. 上升型 (Upsweep)</option>
+                    <option value="11">11. 下降型 (Downsweep)</option>
+                    <option value="12">12. U型 (Concave)</option>
+                    <option value="13">13. 倒U型 (Convex)</option>
+                    <option value="14">14. sin型 (Sine)</option>
+                    <option value="15">15. 嘎搭聲 (Click)</option>
+                    <option value="16">16. 突發脈衝聲 (Burst)</option>
                 </optgroup>
                 <optgroup label="環境與干擾">
                     <option value="90">90. 環境噪音 (Noise)</option>
@@ -603,6 +616,27 @@ to { transform: scale(1); opacity: 1; }
         toast.innerText = message;
         toast.className = "show";
         setTimeout(function () { toast.className = toast.className.replace("show", ""); }, 2000);
+    }
+
+    function clearAllLabels(uploadId) {
+        if (!confirm("確定要清空這份音檔的所有標記嗎？此操作無法復原。")) return;
+        
+        fetch(`/api/upload/${uploadId}/clear_labels`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("已成功清空所有標記！");
+                location.reload();
+            } else {
+                alert("清空失敗：" + data.error);
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            alert("網路錯誤");
+        });
     }
 </script>
 {% endblock %}

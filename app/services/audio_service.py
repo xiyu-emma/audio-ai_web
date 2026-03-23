@@ -73,6 +73,7 @@ class AudioService:
             spec_params = {
                 'n_fft': n_fft,
                 'hop_length': hop_length,
+                'window_overlap': window_overlap,
                 'window_type': params.get('window_type', 'hann'),
                 'n_mels': int(params.get('n_mels', 128)),
                 'f_min': float(params.get('f_min', 0)),

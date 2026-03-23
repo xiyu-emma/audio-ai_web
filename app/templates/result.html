@@ -146,10 +146,14 @@
             style="padding: 5px 12px;">上一頁</a>
         {% endif %}
 
-        <span class="btn"
-            style="background: white; color: var(--primary-dark); border: 1px solid #ddd; cursor: default;">
-            第 {{ pagination.page }} 頁 / 共 {{ pagination.pages }} 頁
-        </span>
+            <span style="font-size: 1rem; color: var(--text-main); margin: 0 10px; display: flex; align-items: center; gap: 5px;">
+                第 
+                <input type="number" value="{{ pagination.page }}" min="1" max="{{ pagination.pages }}"
+                    style="width: 60px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 4px;"
+                    onkeydown="if(event.key === 'Enter') { let u = new URL(window.location.href); u.searchParams.set('page', this.value); window.location.href = u.href; }"
+                    onchange="let u = new URL(window.location.href); u.searchParams.set('page', this.value); window.location.href = u.href;"> 
+                頁 / 共 {{ pagination.pages }} 頁
+            </span>
 
         {% if pagination.has_next %}
         <a href="{{ url_for('main.results', upload_id=upload.id, page=pagination.next_num) }}" class="btn btn-secondary"

@@ -119,3 +119,25 @@ def save_bbox_annotations(result_id):
 
     db.session.commit()
     return jsonify({'success': True, 'count': len(boxes)})
+
+@main_bp.route('/api/upload/<int:upload_id>/clear_labels', methods=['POST'])
+def clear_all_labels(upload_id):
+    """API: 清空一份音檔的所有標記"""
+    try:
+        # 清空 BBoxAnnotation
+        results = Result.query.filter_by(upload_id=upload_id).all()
+        result_ids = [r.id for r in results]
+        if result_ids:
+            BBoxAnnotation.query.filter(BBoxAnnotation.result_id.in_(result_ids)).delete(synchronize_session=False)
+
+        # 清空 CetaceanInfo 事件
+        CetaceanInfo.query.filter_by(audio_id=upload_id).update(
+            {'event_type': 0, 'detect_type': 0},
+            synchronize_session=False
+        )
+
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500

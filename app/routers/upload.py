@@ -1,12 +1,14 @@
 import os
 import json
 import shutil
-from flask import request, redirect, url_for, current_app
+from flask import request, redirect, url_for, current_app, jsonify
 from werkzeug.utils import secure_filename
+import pandas as pd
+import librosa
 from ..main_router import main_bp
 
 # 引入相關模型和實例
-from ..models import AudioInfo, PointInfo
+from ..models import AudioInfo, PointInfo, BBoxAnnotation, Result, CetaceanInfo
 from .. import db, celery
 
 @main_bp.route('/upload', methods=['POST'])
@@ -90,3 +92,196 @@ def delete_selected_uploads():
         db.session.delete(u)
     db.session.commit()
     return redirect(url_for('main.history'))
+
+@main_bp.route('/api/import_excel', methods=['POST'])
+def import_excel():
+    """匯入 Excel 標記資料"""
+    files = request.files.getlist('files')
+    if not files:
+        return jsonify({'error': '沒有選擇檔案'}), 400
+    
+    default_label = request.form.get('default_label', 'whale')
+    
+    LABEL_TO_EVENT_TYPE = {
+        'whale': 1, 'unknown': 0, 'whale_upsweep': 10, 'whale_downsweep': 11,
+        'whale_concave': 12, 'whale_convex': 13, 'whale_sine': 14, 'whale_click': 15,
+        'whale_burst': 16, 'noise': 90, 'ship': 91, 'piling': 92
+    }
+    default_event_type = LABEL_TO_EVENT_TYPE.get(default_label, 0)
+    
+    success_count = 0
+    total_labels_inserted = 0
+    errors = []
+    
+    for file in files:
+        if not file.filename.endswith('.xlsx'):
+            continue
+            
+        filename = secure_filename(file.filename)
+        base_filename = os.path.splitext(filename)[0]
+        
+        # 尋找對應的音檔
+        audio = AudioInfo.query.filter(AudioInfo.file_name.like(f"{base_filename}%")).first()
+        if not audio:
+            errors.append(f"找不到檔名為 {base_filename} 相關的音檔記錄")
+            continue
+            
+        try:
+            df = pd.read_excel(file, header=None)
+            if len(df) <= 2:
+                errors.append(f"檔案 {filename} 沒有資料")
+                continue
+                
+            params = audio.get_params()
+            segment_duration = float(params.get('segment_duration', 2.0))
+            overlap_ratio = float(params.get('overlap', 50)) / 100.0
+            step_sec = segment_duration * (1 - overlap_ratio)
+            
+            results = Result.query.filter_by(upload_id=audio.id).order_by(Result.id.asc()).all()
+            cetaceans = CetaceanInfo.query.filter_by(audio_id=audio.id).order_by(CetaceanInfo.id.asc()).all()
+            if not results:
+                errors.append(f"音檔 {base_filename} 尚未產生頻譜圖")
+                continue
+            
+            result_mapping = {}
+            for res in results:
+                try:
+                    r_idx = int(res.spectrogram_filename.split('_')[-1].split('.')[0])
+                    result_mapping[r_idx] = res.id
+                except:
+                    pass
+            
+            result_id_to_cetacean = {}
+            if len(results) == len(cetaceans):
+                for r, c in zip(results, cetaceans):
+                    result_id_to_cetacean[r.id] = c
+            
+            sr = audio.fs if audio.fs else 24000
+            spec_f_max = float(params.get('f_max', 0))
+            if spec_f_max <= 0:
+                spec_f_max = sr / 2.0
+            spec_f_min = float(params.get('f_min', 0))
+            
+            spec_type = params.get('spec_type', 'mel')
+            if spec_type == 'yamnet_log_mel':
+                spec_f_min = 125.0
+                spec_f_max = 7500.0
+                
+            f_range = spec_f_max - spec_f_min
+            if f_range <= 0: f_range = sr / 2.0
+            
+            labels_inserted = 0
+            labeled_result_ids = set()
+            
+            for index, row in df.iloc[2:].iterrows():
+                try:
+                    start_m, start_s = pd.to_numeric(row[0], errors='coerce'), pd.to_numeric(row[1], errors='coerce')
+                    end_m, end_s = pd.to_numeric(row[2], errors='coerce'), pd.to_numeric(row[3], errors='coerce')
+                    start_f, end_f = pd.to_numeric(row[4], errors='coerce'), pd.to_numeric(row[5], errors='coerce')
+                    max_f, min_f = pd.to_numeric(row[6], errors='coerce'), pd.to_numeric(row[7], errors='coerce')
+                    
+                    if pd.isna(start_m) or pd.isna(start_s): continue
+                    
+                    start_time_sec = float(start_m) * 60 + float(start_s)
+                    end_time_sec = float(end_m) * 60 + float(end_s)
+                    if start_time_sec >= end_time_sec: continue
+                    
+                    if pd.isna(max_f) or pd.isna(min_f):
+                        max_f_label = max(start_f, end_f) if not pd.isna(start_f) else (spec_f_max)
+                        min_f_label = min(start_f, end_f) if not pd.isna(start_f) else (spec_f_min)
+                    else:
+                        max_f_label = float(max_f)
+                        min_f_label = float(min_f)
+                    
+                    if max_f_label < min_f_label:
+                        max_f_label, min_f_label = min_f_label, max_f_label
+                        
+                    if spec_type in ['mel', 'yamnet_log_mel']:
+                        mel_max_f_label = librosa.hz_to_mel(max_f_label)
+                        mel_min_f_label = librosa.hz_to_mel(min_f_label)
+                        mel_spec_max = librosa.hz_to_mel(spec_f_max)
+                        mel_spec_min = librosa.hz_to_mel(spec_f_min)
+                        
+                        m_range = mel_spec_max - mel_spec_min
+                        if m_range <= 0: m_range = 1.0
+                        
+                        y_percent = (mel_spec_max - mel_max_f_label) / m_range
+                        h_percent = (mel_max_f_label - mel_min_f_label) / m_range
+                    else:
+                        y_percent = (spec_f_max - max_f_label) / f_range
+                        h_percent = (max_f_label - min_f_label) / f_range
+                    
+                    if y_percent < 0:
+                        h_percent += y_percent
+                        y_percent = 0
+                    if y_percent > 1: y_percent = 1
+                    if h_percent > 1: h_percent = 1
+                    
+                    start_idx = max(0, int(start_time_sec // step_sec) - 1)
+                    end_idx = int(end_time_sec // step_sec) + 1
+                    
+                    for i in range(start_idx, end_idx + 1):
+                        if i not in result_mapping: continue
+                        
+                        seg_start = i * step_sec
+                        seg_end = seg_start + segment_duration
+                        
+                        overlap_start = max(start_time_sec, seg_start)
+                        overlap_end = min(end_time_sec, seg_end)
+                        
+                        if overlap_start < overlap_end:
+                            labeled_result_ids.add(result_mapping[i])
+                            x_percent = (overlap_start - seg_start) / segment_duration
+                            w_percent = (overlap_end - overlap_start) / segment_duration
+                            
+                            bbox = BBoxAnnotation(
+                                result_id=result_mapping[i],
+                                label=default_label,
+                                x=float(x_percent),
+                                y=float(y_percent),
+                                width=float(w_percent),
+                                height=float(h_percent)
+                            )
+                            db.session.add(bbox)
+                            labels_inserted += 1
+                            
+                            c_info = result_id_to_cetacean.get(result_mapping[i])
+                            if c_info:
+                                c_info.event_type = default_event_type
+                                c_info.detect_type = 0
+                except Exception as e:
+                    print(f"解析 Excel 第 {index} 列錯誤: {e}")
+                    continue
+            
+            # 將未在 Excel 中標記的片段設為環境噪音 (90)
+            for res in results:
+                if res.id not in labeled_result_ids:
+                    c_info = result_id_to_cetacean.get(res.id)
+                    if c_info:
+                        c_info.event_type = 90
+                        c_info.detect_type = 0
+                    
+                    bbox = BBoxAnnotation(
+                        result_id=res.id,
+                        label='noise',
+                        x=0.0,
+                        y=0.0,
+                        width=1.0,
+                        height=1.0
+                    )
+                    db.session.add(bbox)
+                    labels_inserted += 1
+
+            db.session.commit()
+            success_count += 1
+            total_labels_inserted += labels_inserted
+            
+        except Exception as e:
+            errors.append(f"處理 {filename} 時發生錯誤: {str(e)}")
+            
+    return jsonify({
+        'success': True,
+        'success_count': success_count,
+        'total_labels': total_labels_inserted,
+        'errors': errors
+    })

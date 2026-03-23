@@ -238,7 +238,13 @@ font-size: 0.8rem;
                 <button class="btn btn-secondary btn-sm" disabled>上一張</button>
                 {% endif %}
 
-                <span class="page-info">{{ current_index + 1 }} / {{ total }}</span>
+                <span class="page-info" style="display:flex; align-items:center; gap:5px;">
+                    <input type="number" value="{{ current_index + 1 }}" min="1" max="{{ total }}"
+                        style="width: 50px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 2px; background: transparent; color: inherit; font-family: inherit; font-size: 1rem;"
+                        onkeydown="if(event.key === 'Enter') { let val = parseInt(this.value); if(val >= 1 && val <= {{ total }}) { let u = new URL(window.location.href); u.searchParams.set('index', val - 1); window.location.href = u.href; } }"
+                        onchange="let val = parseInt(this.value); if(val >= 1 && val <= {{ total }}) { let u = new URL(window.location.href); u.searchParams.set('index', val - 1); window.location.href = u.href; }">
+                    / {{ total }}
+                </span>
 
                 {% if current_index < total - 1 %} <a
                     href="{{ url_for('main.label_advanced_page', upload_id=upload.id, index=current_index + 1) }}"
@@ -264,6 +270,10 @@ font-size: 0.8rem;
         <h3>選擇標籤類別</h3>
         <div class="label-buttons" id="labelButtons">
             <!-- 鯨豚類 -->
+            <button type="button" class="label-btn" data-label="whale" data-color="#2563eb">
+                <span class="color-dot" style="background: #2563eb;"></span>
+                鯨魚 (Whale)
+            </button>
             <button type="button" class="label-btn active" data-label="whale_upsweep" data-color="#3b82f6">
                 <span class="color-dot" style="background: #3b82f6;"></span>
                 上升型 (Upsweep)
@@ -348,6 +358,7 @@ font-size: 0.8rem;
 
     // 標籤顯示名稱
     const LABEL_NAMES = {
+        'whale': '鯨魚 (Whale)',
         'whale_upsweep': '上升型 (Upsweep)',
         'whale_downsweep': '下降型 (Downsweep)',
         'whale_concave': 'U型 (Concave)',

@@ -195,7 +195,7 @@ class CnnTrainer:
                 
                 # 更新進度
                 progress = 15 + int((epoch + 1) / epochs * 80)
-                if progress % 5 == 0 and progress != training_run.progress:
+                if progress > training_run.progress:
                     training_run.progress = progress
                     db.session.commit()
             

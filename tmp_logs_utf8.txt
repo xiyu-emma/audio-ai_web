@@ -1,0 +1,364 @@
+﻿worker-1  | [2026-03-23 19:15:04,506: INFO/ForkPoolWorker-1] Task app.tasks.process_audio_task[5a975508-4428-47f6-b3f9-7e6e09d7f137] succeeded in 90.73313320900343s: None
+worker-1  | [2026-03-23 19:15:12,630: INFO/ForkPoolWorker-17] Task app.tasks.process_audio_task[221d4ed0-8b1a-4b30-9c6b-eee7d811639a] succeeded in 87.23552417999963s: None
+worker-1  | [2026-03-23 19:15:22,661: INFO/ForkPoolWorker-2] Task app.tasks.process_audio_task[30b12df5-bf10-43e3-9ca1-d01253b6fdd4] succeeded in 84.94225802899746s: None
+worker-1  | [2026-03-23 19:15:31,456: INFO/ForkPoolWorker-18] Task app.tasks.process_audio_task[073bebeb-6e58-4ede-9355-da39b5af9e27] succeeded in 80.41686254700107s: None
+worker-1  | [2026-03-23 19:42:33,530: INFO/MainProcess] Task app.tasks.process_audio_task[daa9c7e8-e07b-40a2-a1cc-491c89f60ebf] received
+worker-1  | [2026-03-23 19:42:44,322: INFO/MainProcess] Task app.tasks.process_audio_task[571d0fdb-b00b-4c55-a499-a6296d6b79e3] received
+worker-1  | [2026-03-23 19:43:50,464: INFO/ForkPoolWorker-15] Task app.tasks.process_audio_task[daa9c7e8-e07b-40a2-a1cc-491c89f60ebf] succeeded in 76.90347067400216s: None
+worker-1  | [2026-03-23 19:43:59,190: INFO/ForkPoolWorker-16] Task app.tasks.process_audio_task[571d0fdb-b00b-4c55-a499-a6296d6b79e3] succeeded in 74.83593315199687s: None
+worker-1  | [2026-03-23 20:03:54,135: INFO/MainProcess] Task app.tasks.process_audio_task[6f0af53c-ccf2-4912-b69f-bb45f9a463ee] received
+worker-1  | [2026-03-23 20:04:52,554: INFO/ForkPoolWorker-15] Task app.tasks.process_audio_task[6f0af53c-ccf2-4912-b69f-bb45f9a463ee] succeeded in 58.420522928001446s: None
+worker-1  | [2026-03-23 20:09:35,190: INFO/MainProcess] Task app.tasks.process_audio_task[2313d531-2033-4343-83ec-23c0cc28203c] received
+worker-1  | [2026-03-23 20:09:44,482: INFO/MainProcess] Task app.tasks.process_audio_task[df1327f1-2c46-4432-9285-f81e27458abd] received
+worker-1  | [2026-03-23 20:10:38,569: INFO/ForkPoolWorker-15] Task app.tasks.process_audio_task[2313d531-2033-4343-83ec-23c0cc28203c] succeeded in 63.381481074000476s: None
+worker-1  | [2026-03-23 20:10:46,396: INFO/ForkPoolWorker-16] Task app.tasks.process_audio_task[df1327f1-2c46-4432-9285-f81e27458abd] succeeded in 61.91419840999879s: None
+worker-1  | [2026-03-23 20:16:29,862: INFO/MainProcess] Task app.tasks.process_audio_task[95c095e8-c438-4905-bce7-7557ff23187f] received
+worker-1  | [2026-03-23 20:16:39,166: INFO/MainProcess] Task app.tasks.process_audio_task[56fcc620-9e7a-41b0-a4e3-0d6774e0dbfa] received
+worker-1  | [2026-03-23 20:16:49,435: INFO/MainProcess] Task app.tasks.process_audio_task[ca130fdd-b673-4eee-a9a2-ec1feb9018ed] received
+worker-1  | [2026-03-23 20:17:00,396: INFO/MainProcess] Task app.tasks.process_audio_task[a3f0c954-91dd-4758-be5b-c57386c9ea23] received
+worker-1  | [2026-03-23 20:17:12,193: INFO/MainProcess] Task app.tasks.process_audio_task[c03d6641-bebb-4e3c-a158-66b7309f8c97] received
+worker-1  | [2026-03-23 20:17:24,319: INFO/MainProcess] Task app.tasks.process_audio_task[64f92df7-2f1a-47ae-8175-87107e722afa] received
+worker-1  | [2026-03-23 20:17:37,328: INFO/MainProcess] Task app.tasks.process_audio_task[58e46c29-bada-43e0-8007-e136d0ab30c9] received
+worker-1  | [2026-03-23 20:17:50,944: INFO/MainProcess] Task app.tasks.process_audio_task[e5da5491-c352-46bf-881b-56f4343a2676] received
+worker-1  | [2026-03-23 20:17:52,306: INFO/ForkPoolWorker-15] Task app.tasks.process_audio_task[95c095e8-c438-4905-bce7-7557ff23187f] succeeded in 82.4486494599987s: None
+worker-1  | [2026-03-23 20:18:04,876: INFO/MainProcess] Task app.tasks.process_audio_task[897b8ed4-bcef-4c3e-adad-93d5748aca2c] received
+worker-1  | [2026-03-23 20:18:05,812: INFO/ForkPoolWorker-16] Task app.tasks.process_audio_task[56fcc620-9e7a-41b0-a4e3-0d6774e0dbfa] succeeded in 86.65040622500237s: None
+worker-1  | [2026-03-23 20:18:22,222: INFO/ForkPoolWorker-1] Task app.tasks.process_audio_task[ca130fdd-b673-4eee-a9a2-ec1feb9018ed] succeeded in 92.73780550499941s: None
+worker-1  | [2026-03-23 20:18:35,783: INFO/ForkPoolWorker-17] Task app.tasks.process_audio_task[a3f0c954-91dd-4758-be5b-c57386c9ea23] succeeded in 95.35034885500136s: None
+worker-1  | [2026-03-23 20:18:47,012: INFO/ForkPoolWorker-2] Task app.tasks.process_audio_task[c03d6641-bebb-4e3c-a158-66b7309f8c97] succeeded in 94.79130093500135s: None
+worker-1  | [2026-03-23 20:18:57,129: INFO/ForkPoolWorker-18] Task app.tasks.process_audio_task[64f92df7-2f1a-47ae-8175-87107e722afa] succeeded in 92.77819129599811s: None
+worker-1  | [2026-03-23 20:19:08,507: INFO/ForkPoolWorker-3] Task app.tasks.process_audio_task[58e46c29-bada-43e0-8007-e136d0ab30c9] succeeded in 91.13337367200074s: None
+worker-1  | [2026-03-23 20:19:16,167: INFO/ForkPoolWorker-19] Task app.tasks.process_audio_task[e5da5491-c352-46bf-881b-56f4343a2676] succeeded in 85.20081903399841s: None
+worker-1  | [2026-03-23 20:19:22,513: INFO/ForkPoolWorker-15] Task app.tasks.process_audio_task[897b8ed4-bcef-4c3e-adad-93d5748aca2c] succeeded in 77.64019876699967s: None
+worker-1  | [2026-03-23 20:20:50,738: INFO/MainProcess] Task app.tasks.process_audio_task[1f1b91a7-0577-480a-ad18-506836396d55] received
+worker-1  | [2026-03-23 20:21:49,302: INFO/ForkPoolWorker-15] Task app.tasks.process_audio_task[1f1b91a7-0577-480a-ad18-506836396d55] succeeded in 58.565754805000324s: None
+worker-1  | [2026-03-23 20:22:47,102: INFO/MainProcess] Task app.tasks.train_cnn_model[f6d9c96f-882c-44b5-b871-517964b8e497] received
+worker-1  | [2026-03-23 20:24:13,090: WARNING/ForkPoolWorker-15] Downloading: "https://download.pytorch.org/models/efficientnet_b0_rwightman-7f5810bc.pth" to /root/.cache/torch/hub/checkpoints/efficientnet_b0_rwightman-7f5810bc.pth
+worker-1  | [2026-03-23 20:24:13,471: WARNING/ForkPoolWorker-15] 
+0.6%
+worker-1  | [2026-03-23 20:24:13,484: WARNING/ForkPoolWorker-15] 
+1.2%
+worker-1  | [2026-03-23 20:24:13,500: WARNING/ForkPoolWorker-15] 
+1.8%
+worker-1  | [2026-03-23 20:24:13,531: WARNING/ForkPoolWorker-15] 
+2.4%
+worker-1  | [2026-03-23 20:24:13,534: WARNING/ForkPoolWorker-15] 
+3.1%
+worker-1  | [2026-03-23 20:24:13,557: WARNING/ForkPoolWorker-15] 
+3.7%
+worker-1  | [2026-03-23 20:24:13,564: WARNING/ForkPoolWorker-15] 
+4.3%
+worker-1  | [2026-03-23 20:24:13,576: WARNING/ForkPoolWorker-15] 
+4.9%
+worker-1  | [2026-03-23 20:24:13,592: WARNING/ForkPoolWorker-15] 
+5.5%
+worker-1  | [2026-03-23 20:24:13,600: WARNING/ForkPoolWorker-15] 
+6.1%
+worker-1  | [2026-03-23 20:24:13,617: WARNING/ForkPoolWorker-15] 
+6.7%
+worker-1  | [2026-03-23 20:24:13,628: WARNING/ForkPoolWorker-15] 
+7.3%
+worker-1  | [2026-03-23 20:24:13,635: WARNING/ForkPoolWorker-15] 
+7.9%
+worker-1  | [2026-03-23 20:24:13,642: WARNING/ForkPoolWorker-15] 
+8.6%
+worker-1  | [2026-03-23 20:24:13,655: WARNING/ForkPoolWorker-15] 
+9.2%
+worker-1  | [2026-03-23 20:24:13,665: WARNING/ForkPoolWorker-15] 
+9.8%
+worker-1  | [2026-03-23 20:24:13,683: WARNING/ForkPoolWorker-15] 
+10.4%
+worker-1  | [2026-03-23 20:24:13,688: WARNING/ForkPoolWorker-15] 
+11.0%
+worker-1  | [2026-03-23 20:24:13,701: WARNING/ForkPoolWorker-15] 
+11.6%
+worker-1  | [2026-03-23 20:24:13,713: WARNING/ForkPoolWorker-15] 
+12.2%
+worker-1  | [2026-03-23 20:24:13,728: WARNING/ForkPoolWorker-15] 
+12.8%
+worker-1  | [2026-03-23 20:24:13,732: WARNING/ForkPoolWorker-15] 
+13.4%
+worker-1  | [2026-03-23 20:24:13,770: WARNING/ForkPoolWorker-15] 
+14.1%
+worker-1  | [2026-03-23 20:24:13,773: WARNING/ForkPoolWorker-15] 
+14.7%
+worker-1  | [2026-03-23 20:24:13,775: WARNING/ForkPoolWorker-15] 
+15.3%
+worker-1  | [2026-03-23 20:24:13,787: WARNING/ForkPoolWorker-15] 
+15.9%
+worker-1  | [2026-03-23 20:24:13,803: WARNING/ForkPoolWorker-15] 
+16.5%
+worker-1  | [2026-03-23 20:24:13,823: WARNING/ForkPoolWorker-15] 
+17.1%
+worker-1  | [2026-03-23 20:24:13,826: WARNING/ForkPoolWorker-15] 
+17.7%
+worker-1  | [2026-03-23 20:24:13,836: WARNING/ForkPoolWorker-15] 
+18.3%
+worker-1  | [2026-03-23 20:24:13,839: WARNING/ForkPoolWorker-15] 
+18.9%
+worker-1  | [2026-03-23 20:24:13,846: WARNING/ForkPoolWorker-15] 
+19.6%
+worker-1  | [2026-03-23 20:24:13,857: WARNING/ForkPoolWorker-15] 
+20.2%
+worker-1  | [2026-03-23 20:24:13,873: WARNING/ForkPoolWorker-15] 
+20.8%
+worker-1  | [2026-03-23 20:24:13,912: WARNING/ForkPoolWorker-15] 
+21.4%
+worker-1  | [2026-03-23 20:24:13,934: WARNING/ForkPoolWorker-15] 
+22.0%
+worker-1  | [2026-03-23 20:24:13,960: WARNING/ForkPoolWorker-15] 
+22.6%
+worker-1  | [2026-03-23 20:24:14,010: WARNING/ForkPoolWorker-15] 
+23.2%
+worker-1  | [2026-03-23 20:24:14,013: WARNING/ForkPoolWorker-15] 
+23.8%
+worker-1  | [2026-03-23 20:24:14,021: WARNING/ForkPoolWorker-15] 
+24.4%
+worker-1  | [2026-03-23 20:24:14,022: WARNING/ForkPoolWorker-15] 
+25.1%
+worker-1  | [2026-03-23 20:24:14,026: WARNING/ForkPoolWorker-15] 
+25.7%
+worker-1  | [2026-03-23 20:24:14,040: WARNING/ForkPoolWorker-15] 
+26.3%
+worker-1  | [2026-03-23 20:24:14,075: WARNING/ForkPoolWorker-15] 
+26.9%
+worker-1  | [2026-03-23 20:24:14,082: WARNING/ForkPoolWorker-15] 
+27.5%
+worker-1  | [2026-03-23 20:24:14,090: WARNING/ForkPoolWorker-15] 
+28.1%
+worker-1  | [2026-03-23 20:24:14,093: WARNING/ForkPoolWorker-15] 
+28.7%
+worker-1  | [2026-03-23 20:24:14,103: WARNING/ForkPoolWorker-15] 
+29.3%
+worker-1  | [2026-03-23 20:24:14,116: WARNING/ForkPoolWorker-15] 
+29.9%
+worker-1  | [2026-03-23 20:24:14,132: WARNING/ForkPoolWorker-15] 
+30.6%
+worker-1  | [2026-03-23 20:24:14,165: WARNING/ForkPoolWorker-15] 
+31.2%
+worker-1  | [2026-03-23 20:24:14,168: WARNING/ForkPoolWorker-15] 
+31.8%
+worker-1  | [2026-03-23 20:24:14,170: WARNING/ForkPoolWorker-15] 
+32.4%
+worker-1  | [2026-03-23 20:24:14,180: WARNING/ForkPoolWorker-15] 
+33.0%
+worker-1  | [2026-03-23 20:24:14,212: WARNING/ForkPoolWorker-15] 
+33.6%
+worker-1  | [2026-03-23 20:24:14,214: WARNING/ForkPoolWorker-15] 
+34.2%
+worker-1  | [2026-03-23 20:24:14,217: WARNING/ForkPoolWorker-15] 
+34.8%
+worker-1  | [2026-03-23 20:24:14,232: WARNING/ForkPoolWorker-15] 
+35.5%
+worker-1  | [2026-03-23 20:24:14,243: WARNING/ForkPoolWorker-15] 
+36.1%
+worker-1  | [2026-03-23 20:24:14,266: WARNING/ForkPoolWorker-15] 
+36.7%
+worker-1  | [2026-03-23 20:24:14,268: WARNING/ForkPoolWorker-15] 
+37.3%
+worker-1  | [2026-03-23 20:24:14,282: WARNING/ForkPoolWorker-15] 
+37.9%
+worker-1  | [2026-03-23 20:24:14,284: WARNING/ForkPoolWorker-15] 
+38.5%
+worker-1  | [2026-03-23 20:24:14,296: WARNING/ForkPoolWorker-15] 
+39.1%
+worker-1  | [2026-03-23 20:24:14,307: WARNING/ForkPoolWorker-15] 
+39.7%
+worker-1  | [2026-03-23 20:24:14,327: WARNING/ForkPoolWorker-15] 
+40.3%
+worker-1  | [2026-03-23 20:24:14,351: WARNING/ForkPoolWorker-15] 
+41.0%
+worker-1  | [2026-03-23 20:24:14,354: WARNING/ForkPoolWorker-15] 
+41.6%
+worker-1  | [2026-03-23 20:24:14,357: WARNING/ForkPoolWorker-15] 
+42.2%
+worker-1  | [2026-03-23 20:24:14,362: WARNING/ForkPoolWorker-15] 
+42.8%
+worker-1  | [2026-03-23 20:24:14,372: WARNING/ForkPoolWorker-15] 
+43.4%
+worker-1  | [2026-03-23 20:24:14,382: WARNING/ForkPoolWorker-15] 
+44.0%
+worker-1  | [2026-03-23 20:24:14,424: WARNING/ForkPoolWorker-15] 
+44.6%
+worker-1  | [2026-03-23 20:24:14,429: WARNING/ForkPoolWorker-15] 
+45.2%
+worker-1  | [2026-03-23 20:24:14,446: WARNING/ForkPoolWorker-15] 
+45.8%
+worker-1  | [2026-03-23 20:24:14,450: WARNING/ForkPoolWorker-15] 
+46.5%
+worker-1  | [2026-03-23 20:24:14,471: WARNING/ForkPoolWorker-15] 
+47.1%
+worker-1  | [2026-03-23 20:24:14,473: WARNING/ForkPoolWorker-15] 
+47.7%
+worker-1  | [2026-03-23 20:24:14,482: WARNING/ForkPoolWorker-15] 
+48.3%
+worker-1  | [2026-03-23 20:24:14,485: WARNING/ForkPoolWorker-15] 
+48.9%
+worker-1  | [2026-03-23 20:24:14,498: WARNING/ForkPoolWorker-15] 
+49.5%
+worker-1  | [2026-03-23 20:24:14,509: WARNING/ForkPoolWorker-15] 
+50.1%
+worker-1  | [2026-03-23 20:24:14,522: WARNING/ForkPoolWorker-15] 
+50.7%
+worker-1  | [2026-03-23 20:24:14,544: WARNING/ForkPoolWorker-15] 
+51.3%
+worker-1  | [2026-03-23 20:24:14,547: WARNING/ForkPoolWorker-15] 
+52.0%
+worker-1  | [2026-03-23 20:24:14,552: WARNING/ForkPoolWorker-15] 
+52.6%
+worker-1  | [2026-03-23 20:24:14,572: WARNING/ForkPoolWorker-15] 
+53.2%
+worker-1  | [2026-03-23 20:24:14,590: WARNING/ForkPoolWorker-15] 
+53.8%
+worker-1  | [2026-03-23 20:24:14,592: WARNING/ForkPoolWorker-15] 
+54.4%
+worker-1  | [2026-03-23 20:24:14,606: WARNING/ForkPoolWorker-15] 
+55.0%
+worker-1  | [2026-03-23 20:24:14,614: WARNING/ForkPoolWorker-15] 
+55.6%
+worker-1  | [2026-03-23 20:24:14,624: WARNING/ForkPoolWorker-15] 
+56.2%
+worker-1  | [2026-03-23 20:24:14,637: WARNING/ForkPoolWorker-15] 
+56.8%
+worker-1  | [2026-03-23 20:24:14,649: WARNING/ForkPoolWorker-15] 
+57.5%
+worker-1  | [2026-03-23 20:24:14,663: WARNING/ForkPoolWorker-15] 
+58.1%
+worker-1  | [2026-03-23 20:24:14,705: WARNING/ForkPoolWorker-15] 
+58.7%
+worker-1  | [2026-03-23 20:24:14,707: WARNING/ForkPoolWorker-15] 
+59.3%
+worker-1  | [2026-03-23 20:24:14,710: WARNING/ForkPoolWorker-15] 
+59.9%
+worker-1  | [2026-03-23 20:24:14,739: WARNING/ForkPoolWorker-15] 
+60.5%
+worker-1  | [2026-03-23 20:24:14,748: WARNING/ForkPoolWorker-15] 
+61.1%
+worker-1  | [2026-03-23 20:24:14,754: WARNING/ForkPoolWorker-15] 
+61.7%
+worker-1  | [2026-03-23 20:24:14,757: WARNING/ForkPoolWorker-15] 
+62.3%
+worker-1  | [2026-03-23 20:24:14,778: WARNING/ForkPoolWorker-15] 
+63.0%
+worker-1  | [2026-03-23 20:24:14,782: WARNING/ForkPoolWorker-15] 
+63.6%
+worker-1  | [2026-03-23 20:24:14,794: WARNING/ForkPoolWorker-15] 
+64.2%
+worker-1  | [2026-03-23 20:24:14,796: WARNING/ForkPoolWorker-15] 
+64.8%
+worker-1  | [2026-03-23 20:24:14,806: WARNING/ForkPoolWorker-15] 
+65.4%
+worker-1  | [2026-03-23 20:24:14,817: WARNING/ForkPoolWorker-15] 
+66.0%
+worker-1  | [2026-03-23 20:24:14,829: WARNING/ForkPoolWorker-15] 
+66.6%
+worker-1  | [2026-03-23 20:24:14,847: WARNING/ForkPoolWorker-15] 
+67.2%
+worker-1  | [2026-03-23 20:24:14,853: WARNING/ForkPoolWorker-15] 
+67.8%
+worker-1  | [2026-03-23 20:24:14,867: WARNING/ForkPoolWorker-15] 
+68.5%
+worker-1  | [2026-03-23 20:24:14,897: WARNING/ForkPoolWorker-15] 
+69.1%
+worker-1  | [2026-03-23 20:24:14,900: WARNING/ForkPoolWorker-15] 
+69.7%
+worker-1  | [2026-03-23 20:24:14,918: WARNING/ForkPoolWorker-15] 
+70.3%
+worker-1  | [2026-03-23 20:24:14,930: WARNING/ForkPoolWorker-15] 
+70.9%
+worker-1  | [2026-03-23 20:24:14,932: WARNING/ForkPoolWorker-15] 
+71.5%
+worker-1  | [2026-03-23 20:24:14,956: WARNING/ForkPoolWorker-15] 
+72.1%
+worker-1  | [2026-03-23 20:24:14,957: WARNING/ForkPoolWorker-15] 
+72.7%
+worker-1  | [2026-03-23 20:24:14,960: WARNING/ForkPoolWorker-15] 
+73.3%
+worker-1  | [2026-03-23 20:24:14,994: WARNING/ForkPoolWorker-15] 
+74.0%
+worker-1  | [2026-03-23 20:24:14,996: WARNING/ForkPoolWorker-15] 
+74.6%
+worker-1  | [2026-03-23 20:24:14,998: WARNING/ForkPoolWorker-15] 
+75.2%
+worker-1  | [2026-03-23 20:24:15,020: WARNING/ForkPoolWorker-15] 
+75.8%
+worker-1  | [2026-03-23 20:24:15,028: WARNING/ForkPoolWorker-15] 
+76.4%
+worker-1  | [2026-03-23 20:24:15,030: WARNING/ForkPoolWorker-15] 
+77.0%
+worker-1  | [2026-03-23 20:24:15,035: WARNING/ForkPoolWorker-15] 
+77.6%
+worker-1  | [2026-03-23 20:24:15,061: WARNING/ForkPoolWorker-15] 
+78.2%
+worker-1  | [2026-03-23 20:24:15,073: WARNING/ForkPoolWorker-15] 
+78.8%
+worker-1  | [2026-03-23 20:24:15,074: WARNING/ForkPoolWorker-15] 
+79.5%
+worker-1  | [2026-03-23 20:24:15,077: WARNING/ForkPoolWorker-15] 
+80.1%
+worker-1  | [2026-03-23 20:24:15,092: WARNING/ForkPoolWorker-15] 
+80.7%
+worker-1  | [2026-03-23 20:24:15,123: WARNING/ForkPoolWorker-15] 
+81.3%
+worker-1  | [2026-03-23 20:24:15,125: WARNING/ForkPoolWorker-15] 
+81.9%
+worker-1  | [2026-03-23 20:24:15,145: WARNING/ForkPoolWorker-15] 
+82.5%
+worker-1  | [2026-03-23 20:24:15,161: WARNING/ForkPoolWorker-15] 
+83.1%
+worker-1  | [2026-03-23 20:24:15,164: WARNING/ForkPoolWorker-15] 
+83.7%
+worker-1  | [2026-03-23 20:24:15,197: WARNING/ForkPoolWorker-15] 
+84.3%
+worker-1  | [2026-03-23 20:24:15,227: WARNING/ForkPoolWorker-15] 
+85.0%
+worker-1  | [2026-03-23 20:24:15,229: WARNING/ForkPoolWorker-15] 
+85.6%
+worker-1  | [2026-03-23 20:24:15,233: WARNING/ForkPoolWorker-15] 
+86.2%
+worker-1  | [2026-03-23 20:24:15,239: WARNING/ForkPoolWorker-15] 
+86.8%
+worker-1  | [2026-03-23 20:24:15,242: WARNING/ForkPoolWorker-15] 
+87.4%
+worker-1  | [2026-03-23 20:24:15,257: WARNING/ForkPoolWorker-15] 
+88.0%
+worker-1  | [2026-03-23 20:24:15,263: WARNING/ForkPoolWorker-15] 
+88.6%
+worker-1  | [2026-03-23 20:24:15,265: WARNING/ForkPoolWorker-15] 
+89.2%
+worker-1  | [2026-03-23 20:24:15,294: WARNING/ForkPoolWorker-15] 
+89.8%
+worker-1  | [2026-03-23 20:24:15,307: WARNING/ForkPoolWorker-15] 
+90.5%
+worker-1  | [2026-03-23 20:24:15,309: WARNING/ForkPoolWorker-15] 
+91.1%
+worker-1  | [2026-03-23 20:24:15,320: WARNING/ForkPoolWorker-15] 
+91.7%
+worker-1  | [2026-03-23 20:24:15,322: WARNING/ForkPoolWorker-15] 
+92.3%
+worker-1  | [2026-03-23 20:24:15,327: WARNING/ForkPoolWorker-15] 
+92.9%
+worker-1  | [2026-03-23 20:24:15,338: WARNING/ForkPoolWorker-15] 
+93.5%
+worker-1  | [2026-03-23 20:24:15,353: WARNING/ForkPoolWorker-15] 
+94.1%
+worker-1  | [2026-03-23 20:24:15,364: WARNING/ForkPoolWorker-15] 
+94.7%
+worker-1  | [2026-03-23 20:24:15,373: WARNING/ForkPoolWorker-15] 
+95.3%
+worker-1  | [2026-03-23 20:24:15,384: WARNING/ForkPoolWorker-15] 
+96.0%
+worker-1  | [2026-03-23 20:24:15,395: WARNING/ForkPoolWorker-15] 
+96.6%
+worker-1  | [2026-03-23 20:24:15,406: WARNING/ForkPoolWorker-15] 
+97.2%
+worker-1  | [2026-03-23 20:24:15,419: WARNING/ForkPoolWorker-15] 
+97.8%
+worker-1  | [2026-03-23 20:24:15,449: WARNING/ForkPoolWorker-15] 
+98.4%
+worker-1  | [2026-03-23 20:24:15,461: WARNING/ForkPoolWorker-15] 
+99.0%
+worker-1  | [2026-03-23 20:24:15,463: WARNING/ForkPoolWorker-15] 
+99.6%
+worker-1  | [2026-03-23 20:24:15,466: WARNING/ForkPoolWorker-15] 
+100.0%

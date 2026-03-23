@@ -17,3 +17,5 @@ tensorflow
 Pillow
 tensorflow-cpu
 scikit-learn
+pandas
+openpyxl
