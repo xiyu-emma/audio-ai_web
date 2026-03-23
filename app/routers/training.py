@@ -127,6 +127,13 @@ def training_report(run_id):
     
     metrics = run.get_metrics()
     
+    # 查詢此次訓練使用的音檔
+    from ..models import AudioInfo
+    upload_ids = params.get('upload_ids', [])
+    used_audios = []
+    if upload_ids:
+        used_audios = AudioInfo.query.filter(AudioInfo.id.in_(upload_ids)).all()
+    
     return render_template(
         'training_report.html', 
         run=run, 
@@ -135,5 +142,6 @@ def training_report(run_id):
         params=params,
         model_type=model_type,
         model_display_name=model_display_names.get(model_type, model_type),
-        is_yolo=is_yolo
+        is_yolo=is_yolo,
+        used_audios=used_audios
     )

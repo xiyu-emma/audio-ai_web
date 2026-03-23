@@ -2,6 +2,13 @@
 
 {% block title %}模型訓練狀態 - OceanAI{% endblock %}
 
+{% block extra_css %}
+@keyframes progress-stripe {
+from { background-position: 20px 0; }
+to { background-position: 0 0; }
+}
+{% endblock %}
+
 {% block content %}
 <div class="container-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
@@ -30,30 +37,42 @@
                         <td><strong>#{{ run.id }}</strong></td>
                         <td>{{ run.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td style="font-size: 0.85rem;">
-                            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
                                 <span
-                                    style="background: #e0e7ff; color: #4338ca; padding: 2px 6px; border-radius: 4px;">{{
-                                    run.get_model_display_name() }}</span>
+                                    style="background: #e0e7ff; color: #4338ca; padding: 3px 8px; border-radius: 6px; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                    [模型] {{ run.get_model_display_name() }}
+                                </span>
                                 <span
-                                    style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px;">{{
-                                    params.get('epochs', 50) }} epochs</span>
+                                    style="background: #f8fafc; color: #475569; padding: 3px 8px; border-radius: 6px; border: 1px solid #e2e8f0;"
+                                    title="訓練輪數">
+                                    [輪數] {{ params.get('epochs', 50) }}
+                                </span>
                                 <span
-                                    style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px;">batch
-                                    {{ params.get('batch_size', 16) }}</span>
+                                    style="background: #f8fafc; color: #475569; padding: 3px 8px; border-radius: 6px; border: 1px solid #e2e8f0;"
+                                    title="批次大小">
+                                    [批次] {{ params.get('batch_size', 16) }}
+                                </span>
                                 <span
-                                    style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px;">{{
-                                    params.get('image_size', 224) }}px</span>
+                                    style="background: #f8fafc; color: #475569; padding: 3px 8px; border-radius: 6px; border: 1px solid #e2e8f0;"
+                                    title="圖片尺寸">
+                                    [尺寸] {{ params.get('image_size', 224) }}px
+                                </span>
                             </div>
                         </td>
                         <td class="status-cell">
                             {% if run.status == 'RUNNING' or run.status == 'PENDING' %}
                             <div
-                                style="width: 120px; background: #eee; height: 8px; border-radius: 4px; overflow: hidden; position: relative;">
+                                style="width: 120px; background: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden; position: relative; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);">
                                 <div class="progress-bar"
-                                    style="width: {{ run.progress }}%; background: var(--highlight); height: 100%; transition: width 0.4s;">
+                                    style="width: {{ run.progress }}%; background: linear-gradient(90deg, var(--primary-light), var(--primary-med)); height: 100%; transition: width 0.4s ease-out; position: relative; overflow: hidden;">
+                                    <div
+                                        style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent); background-size: 20px 20px; animation: progress-stripe 1s linear infinite;">
+                                    </div>
                                 </div>
                             </div>
-                            <small class="progress-text" style="color: var(--primary-med);">{{ run.progress }}%</small>
+                            <small class="progress-text"
+                                style="color: var(--primary-med); font-weight: 600; margin-top: 4px; display: block;">{{
+                                run.progress }}%</small>
                             {% else %}
                             <span class="status-badge status-{{ run.status }}">{{ run.status }}</span>
                             {% endif %}
@@ -61,19 +80,32 @@
                         <td class="action-cell">
                             {% if run.status == 'SUCCESS' %}
                             <a href="{{ url_for('main.training_report', run_id=run.id) }}" class="btn btn-secondary"
-                                style="padding: 4px 10px; font-size: 0.85rem;">查看報告</a>
+                                style="padding: 4px 10px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px;">
+                                查看報告
+                            </a>
                             <a href="{{ url_for('static', filename=run.results_path + '/weights/best.pt') }}"
-                                class="btn btn-primary" style="padding: 4px 10px; font-size: 0.85rem;" download>下載模型</a>
+                                class="btn btn-primary"
+                                style="padding: 4px 10px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px;"
+                                download>
+                                下載模型
+                            </a>
                             {% elif run.status == 'FAILURE' %}
-                            <span style="color: var(--highlight);">訓練失敗</span>
+                            <span style="color: var(--highlight); font-weight: 600;">訓練失敗</span>
                             {% else %}
-                            <span style="color: #ccc;">--</span>
+                            <span style="color: #cbd5e1;">--</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 2rem; color: #999;">目前沒有訓練任務紀錄。</td>
+                        <td colspan="6" style="text-align: center; padding: 4rem 2rem;">
+                            <div style="color: #94a3b8; margin-bottom: 1rem; font-size: 2rem;">[無紀錄]</div>
+                            <h3 style="color: var(--text-dark); margin-bottom: 0.5rem;">目前沒有訓練紀錄</h3>
+                            <a href="{{ url_for('main.history') }}" class="btn btn-primary"
+                                style="padding: 0.75rem 1.5rem;">
+                                前往歷史紀錄建立訓練
+                            </a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

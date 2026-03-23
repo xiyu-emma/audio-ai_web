@@ -119,6 +119,14 @@ border-radius: 8px;
 .chart-box.full-width {
 grid-column: 1 / -1;
 }
+.zoomable-chart {
+transition: transform 0.3s ease, box-shadow 0.3s ease;
+cursor: zoom-in;
+}
+.zoomable-chart:hover {
+transform: scale(1.03);
+box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
 {% endblock %}
 
 {% block content %}
@@ -174,6 +182,45 @@ grid-column: 1 / -1;
             <span class="label">訓練資料集</span>
             <span class="value">{{ params.get('upload_ids', [])|length }} 個音檔</span>
         </div>
+    </div>
+
+    <!-- 訓練音檔列表 -->
+    <h3 class="section-title">訓練使用音檔 
+        <span style="font-size: 0.9rem; color: var(--text-light); font-weight: normal; margin-left: 8px;">(共 {{ used_audios|length }} 筆)</span>
+    </h3>
+    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 2rem;">
+        {% if used_audios %}
+        <table class="data-table" style="margin: 0; box-shadow: none;">
+            <thead>
+                <tr style="background: #f8fafc;">
+                    <th style="padding-left: 1.5rem;">音檔名稱</th>
+                    <th>錄製長度</th>
+                    <th style="text-align: right; padding-right: 1.5rem;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for audio in used_audios %}
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding-left: 1.5rem; font-weight: 500;">
+                        {{ audio.file_name }}
+                    </td>
+                    <td style="color: var(--text-light);">
+                        {{ "%.1f"|format(audio.record_duration) if audio.record_duration else '--' }} 秒
+                    </td>
+                    <td style="text-align: right; padding-right: 1.5rem;">
+                        <a href="{{ url_for('main.results', upload_id=audio.id) }}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85rem;" target="_blank">
+                            查看分析 &rarr;
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="padding: 2rem; text-align: center; color: #94a3b8;">
+            無音檔關聯紀錄或非透過上傳音檔發起的訓練。
+        </div>
+        {% endif %}
     </div>
 
     <!-- 總體評估指標 -->
@@ -270,7 +317,7 @@ grid-column: 1 / -1;
     <div class="chart-grid">
         <div class="chart-box full-width">
             <h4>訓練過程曲線 (Loss & Accuracy)</h4>
-            <img src="{{ url_for('static', filename=images.results) }}" alt="訓練曲線圖"
+            <img src="{{ url_for('static', filename=images.results) }}" class="zoomable-chart" alt="訓練曲線圖"
                 onerror="this.parentElement.innerHTML='<p style=\'color:#999;padding:2rem;\'>圖片載入失敗</p>'">
         </div>
     </div>
@@ -279,7 +326,7 @@ grid-column: 1 / -1;
     <div class="chart-grid" style="margin-top: 2rem;">
         <div class="chart-box">
             <h4>混淆矩陣 (Confusion Matrix)</h4>
-            <img src="{{ url_for('static', filename=images.confusion_matrix) }}" alt="混淆矩陣圖"
+            <img src="{{ url_for('static', filename=images.confusion_matrix) }}" class="zoomable-chart" alt="混淆矩陣圖"
                 onerror="this.parentElement.innerHTML='<p style=\'color:#999;padding:2rem;\'>圖片載入失敗</p>'">
         </div>
     </div>
@@ -289,12 +336,12 @@ grid-column: 1 / -1;
     <div class="chart-grid" style="margin-top: 2rem;">
         <div class="chart-box">
             <h4>驗證集：真實標籤 (Ground Truth)</h4>
-            <img src="{{ url_for('static', filename=images.val_batch0_labels) }}" alt="真實標籤範例"
+            <img src="{{ url_for('static', filename=images.val_batch0_labels) }}" class="zoomable-chart" alt="真實標籤範例"
                 onerror="this.parentElement.innerHTML='<p style=\'color:#999;padding:2rem;\'>圖片載入失敗</p>'">
         </div>
         <div class="chart-box">
             <h4>驗證集：模型預測 (Prediction)</h4>
-            <img src="{{ url_for('static', filename=images.val_batch0_pred) }}" alt="預測結果範例"
+            <img src="{{ url_for('static', filename=images.val_batch0_pred) }}" class="zoomable-chart" alt="預測結果範例"
                 onerror="this.parentElement.innerHTML='<p style=\'color:#999;padding:2rem;\'>圖片載入失敗</p>'">
         </div>
     </div>
