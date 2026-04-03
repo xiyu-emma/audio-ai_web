@@ -27,7 +27,7 @@
                         <th>原始檔案</th>
                         <th>狀態</th>
                         <th>分析時間</th>
-                        <th>參數摘要</th>
+                        <th>參數摘要 / 標記數據</th>
                         <th>操作</th>
                     </tr>
                 </thead>
@@ -56,10 +56,20 @@
                         </td>
                         <td>{{ upload.upload_timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
                         <td>
-                            {% set p = upload.get_params() %}
-                            <small style="color: #666;">
-                                {{ p.spec_type }} | {{ p.segment_duration }}s | ov: {{ p.overlap }}%
-                            </small>
+                            {% if upload.label_counts %}
+                                <div style="display: flex; flex-wrap: wrap; gap: 4px; max-width: 250px;">
+                                    {% for label_name, count in upload.label_counts.items() %}
+                                    <span style="background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: 500; border: 1px solid #bae6fd;">
+                                        {{ label_name }}: {{ count }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {% set p = upload.get_params() %}
+                                <small style="color: #666;">
+                                    {{ p.spec_type }} | {{ p.segment_duration }}s | ov: {{ p.overlap }}%
+                                </small>
+                            {% endif %}
                         </td>
                         <td class="action-cell">
                             {% if upload.status == 'COMPLETED' %}
@@ -171,6 +181,17 @@
                                     <option value="256">256</option>
                                     <option value="320">320</option>
                                 </select>
+                            </div>
+                        </div>
+                        <div class="form-row" id="loss-function-group" style="margin-top: 1rem;">
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label for="loss_function">損失函數 (Loss Function)</label>
+                                <select id="loss_function" name="loss_function">
+                                    <option value="cross_entropy" selected>標準 Cross Entropy</option>
+                                    <option value="focal_loss_multi_class">Multi-class Focal Loss (處理資料不平衡)</option>
+                                    <option value="focal_loss_binary">Binary Focal Loss (各類別獨立判定)</option>
+                                </select>
+                                <small style="color: #666; display: block; margin-top: 4px;">適用於類別樣本數量差距過大時。此設定目前僅在 CNN 模型中生效。</small>
                             </div>
                         </div>
                     </div>

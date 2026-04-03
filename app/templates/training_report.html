@@ -143,7 +143,12 @@ box-shadow: 0 10px 20px rgba(0,0,0,0.1);
                 {% endif %}
             </div>
             <div style="color: var(--text-light);">
-                任務 ID: #{{ run.id }} | 完成時間: {{ run.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                任務 ID: #{{ run.id }} 
+                | 建立時間: {{ run.timestamp.strftime('%Y-%m-%d %H:%M:%S') if run.timestamp else 'N/A' }}
+                {% if metrics and 'end_time' in metrics %}
+                | 完成時間: {{ metrics.end_time }}
+                | 總時長: {{ "%.1f"|format(metrics.duration_seconds / 60) }} 分鐘
+                {% endif %}
             </div>
         </div>
         <div style="display: flex; gap: 0.75rem;">
@@ -182,6 +187,34 @@ box-shadow: 0 10px 20px rgba(0,0,0,0.1);
             <span class="label">訓練資料集</span>
             <span class="value">{{ params.get('upload_ids', [])|length }} 個音檔</span>
         </div>
+        {% if not is_yolo %}
+        <div class="param-item">
+            <span class="label">損失函數</span>
+            <span class="value">
+                {% if params.get('loss_function') == 'focal_loss_multi_class' %}
+                    Multi-class Focal
+                {% elif params.get('loss_function') == 'focal_loss_binary' %}
+                    Binary Focal
+                {% elif params.get('use_focal_loss') %}
+                    Focal Loss (舊版)
+                {% else %}
+                    Cross Entropy
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+        {% if total_label_counts %}
+        <div class="param-item" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; background: #ebf8ff; border-color: #bee3f8;">
+            <span class="label" style="color: #2b6cb0; font-weight: bold;">訓練標籤總覽</span>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                {% for label_name, count in total_label_counts.items() %}
+                <span style="background: white; color: #2b6cb0; padding: 4px 10px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; border: 1px solid #90cdf4; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    {{ label_name }}: {{ count }} 筆
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- 訓練音檔列表 -->
@@ -195,6 +228,7 @@ box-shadow: 0 10px 20px rgba(0,0,0,0.1);
                 <tr style="background: #f8fafc;">
                     <th style="padding-left: 1.5rem;">音檔名稱</th>
                     <th>錄製長度</th>
+                    <th>標記分佈</th>
                     <th style="text-align: right; padding-right: 1.5rem;">操作</th>
                 </tr>
             </thead>
@@ -205,7 +239,20 @@ box-shadow: 0 10px 20px rgba(0,0,0,0.1);
                         {{ audio.file_name }}
                     </td>
                     <td style="color: var(--text-light);">
-                        {{ "%.1f"|format(audio.record_duration) if audio.record_duration else '--' }} 秒
+                        {{ "%.1f"|format(audio.calculated_duration) if audio.calculated_duration is not none else '--' }} 秒
+                    </td>
+                    <td>
+                        {% if audio.label_counts %}
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                            {% for label_name, count in audio.label_counts.items() %}
+                                <span style="background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: 500;">
+                                    {{ label_name }}: {{ count }}
+                                </span>
+                            {% endfor %}
+                            </div>
+                        {% else %}
+                            <span style="color: #94a3b8; font-size: 0.85rem;">無標記</span>
+                        {% endif %}
                     </td>
                     <td style="text-align: right; padding-right: 1.5rem;">
                         <a href="{{ url_for('main.results', upload_id=audio.id) }}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85rem;" target="_blank">

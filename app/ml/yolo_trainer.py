@@ -3,6 +3,7 @@ import shutil
 import random
 import json
 import time
+from datetime import datetime
 from collections import defaultdict
 import numpy as np
 
@@ -121,15 +122,15 @@ class YoloTrainer:
             # 2. 開始訓練
             model = YOLO(model_name)
             
-            def on_epoch_end_callback(trainer):
+            def on_fit_epoch_end_callback(trainer):
                 current_epoch = trainer.epoch + 1
                 total_epochs = trainer.epochs
                 progress = 15 + int((current_epoch / total_epochs) * 80)
-                if progress % 5 == 0 and progress != training_run.progress:
+                if progress > training_run.progress:
                     training_run.progress = progress
                     db.session.commit()
 
-            model.add_callback("on_epoch_end", on_epoch_end_callback)
+            model.add_callback("on_fit_epoch_end", on_fit_epoch_end_callback)
             
             # 執行訓練
             model.train(
@@ -273,9 +274,13 @@ class YoloTrainer:
                 per_class_list = [{'name': name, 'precision': 0, 'recall': 0, 'f1-score': 0} for name in class_names]
 
             # 5. 儲存
+            now = datetime.now()
+            duration_sec = (now - training_run.timestamp.replace(tzinfo=None)).total_seconds() if training_run.timestamp else 0
             metrics_dict = {
                 'accuracy_top1': round(float(accuracy_top1), 4),
-                'per_class_list': per_class_list
+                'per_class_list': per_class_list,
+                'end_time': now.strftime('%Y-%m-%d %H:%M:%S'),
+                'duration_seconds': round(duration_sec, 1)
             }
             training_run.metrics = json.dumps(metrics_dict)
             

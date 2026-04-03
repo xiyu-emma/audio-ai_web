@@ -57,6 +57,24 @@ to { background-position: 0 0; }
                                     title="圖片尺寸">
                                     [尺寸] {{ params.get('image_size', 224) }}px
                                 </span>
+                                {% if params.get('loss_function') == 'focal_loss_multi_class' %}
+                                <span
+                                    style="background: #fdf2f8; color: #db2777; padding: 3px 8px; border-radius: 6px; border: 1px solid #fbcfe8;"
+                                    title="使用 Multi-class Focal Loss">
+                                    [Loss] Multi-class Focal
+                                </span>
+                                {% elif params.get('loss_function') == 'focal_loss_binary' %}
+                                <span
+                                    style="background: #eef2ff; color: #4f46e5; padding: 3px 8px; border-radius: 6px; border: 1px solid #c7d2fe;"
+                                    title="使用 Binary Focal Loss">
+                                    [Loss] Binary Focal
+                                </span>
+                                {% elif params.get('use_focal_loss') %}
+                                <span
+                                    style="background: #fdf2f8; color: #db2777; padding: 3px 8px; border-radius: 6px; border: 1px solid #fbcfe8;">
+                                    [Loss] Focal Loss
+                                </span>
+                                {% endif %}
                             </div>
                         </td>
                         <td class="status-cell">

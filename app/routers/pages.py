@@ -22,6 +22,46 @@ def history():
     else:
         all_uploads = query.order_by(AudioInfo.record_time.desc()).all()
         
+    # 計算標記數據
+    from ..models import CetaceanInfo, Label
+    labels = Label.query.all()
+    label_map = {l.id: l.name for l in labels}
+    
+    DEFAULT_LABEL_MAP = {
+        1: '1. 鯨魚 (Whale)',
+        10: '10. 上升型 (Upsweep)',
+        11: '11. 下降型 (Downsweep)',
+        12: '12. U型 (Concave)',
+        13: '13. 倒U型 (Convex)',
+        14: '14. sin型 (Sine)',
+        15: '15. 嘎搭聲 (Click)',
+        16: '16. 突發脈衝聲 (Burst)',
+        90: '90. 環境噪音 (Noise)',
+        91: '91. 船舶 (Ship)',
+        92: '92. 風機打樁 (Piling)'
+    }
+    
+    for upload in all_uploads:
+        if upload.status == 'COMPLETED':
+            cetaceans = CetaceanInfo.query.filter_by(audio_id=upload.id).filter(CetaceanInfo.event_type != 0).all()
+            if cetaceans:
+                counts_id = {}
+                for c in cetaceans:
+                    counts_id[c.event_type] = counts_id.get(c.event_type, 0) + 1
+                
+                sorted_counts = {}
+                for eid in sorted(counts_id.keys()):
+                    label_name = label_map.get(eid)
+                    if not label_name:
+                        label_name = DEFAULT_LABEL_MAP.get(eid, str(eid))
+                    sorted_counts[label_name] = counts_id[eid]
+                
+                upload.label_counts = sorted_counts
+            else:
+                upload.label_counts = None
+        else:
+            upload.label_counts = None
+            
     return render_template('history.html', uploads=all_uploads, current_sort=sort_order)
 
 @main_bp.route('/results/<int:upload_id>')

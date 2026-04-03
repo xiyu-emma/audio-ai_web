@@ -18,7 +18,8 @@ def start_training():
         'epochs': int(request.form.get('epochs', 50)),
         'batch_size': int(request.form.get('batch_size', 16)),
         'learning_rate': float(request.form.get('learning_rate', 0.001)),
-        'image_size': int(request.form.get('image_size', 224))
+        'image_size': int(request.form.get('image_size', 224)),
+        'loss_function': request.form.get('loss_function', 'cross_entropy')
     }
     
     if upload_ids:
@@ -128,11 +129,72 @@ def training_report(run_id):
     metrics = run.get_metrics()
     
     # 查詢此次訓練使用的音檔
-    from ..models import AudioInfo
+    from ..models import AudioInfo, CetaceanInfo, Label
     upload_ids = params.get('upload_ids', [])
     used_audios = []
     if upload_ids:
         used_audios = AudioInfo.query.filter(AudioInfo.id.in_(upload_ids)).all()
+        
+        # 準備 Label 對照表
+        labels = Label.query.all()
+        label_map = {l.id: l.name for l in labels}
+        
+        # 內建預設標籤對照 (向下相容)
+        DEFAULT_LABEL_MAP = {
+            1: '1. 鯨魚 (Whale)',
+            10: '10. 上升型 (Upsweep)',
+            11: '11. 下降型 (Downsweep)',
+            12: '12. U型 (Concave)',
+            13: '13. 倒U型 (Convex)',
+            14: '14. sin型 (Sine)',
+            15: '15. 嘎搭聲 (Click)',
+            16: '16. 突發脈衝聲 (Burst)',
+            90: '90. 環境噪音 (Noise)',
+            91: '91. 船舶 (Ship)',
+            92: '92. 風機打樁 (Piling)'
+        }
+        
+        total_label_counts_id = {}
+        for audio in used_audios:
+            # 計算如果 record_duration 為 None，就用 params 推算
+            if audio.record_duration is None:
+                p = audio.get_params()
+                seg_dur = p.get('segment_duration', 2.0)
+                overlap = p.get('overlap', 50)
+                num_segments = len(audio.results)
+                if num_segments > 0:
+                    step = seg_dur * (1 - overlap / 100.0)
+                    audio.calculated_duration = seg_dur + (num_segments - 1) * step
+                else:
+                    audio.calculated_duration = 0.0
+            else:
+                audio.calculated_duration = audio.record_duration
+
+            # 取得本音檔且有標記的記錄
+            cetaceans = CetaceanInfo.query.filter_by(audio_id=audio.id).filter(CetaceanInfo.event_type != 0).all()
+            
+            # 使用 ID 統計與排序
+            counts_id = {}
+            for c in cetaceans:
+                counts_id[c.event_type] = counts_id.get(c.event_type, 0) + 1
+                total_label_counts_id[c.event_type] = total_label_counts_id.get(c.event_type, 0) + 1
+            
+            sorted_counts = {}
+            for eid in sorted(counts_id.keys()):
+                label_name = label_map.get(eid)
+                if not label_name:
+                    label_name = DEFAULT_LABEL_MAP.get(eid, str(eid))
+                sorted_counts[label_name] = counts_id[eid]
+            
+            audio.label_counts = sorted_counts
+            
+        # 計算匯總的標籤分布
+        sorted_total_counts = {}
+        for eid in sorted(total_label_counts_id.keys()):
+            label_name = label_map.get(eid)
+            if not label_name:
+                label_name = DEFAULT_LABEL_MAP.get(eid, str(eid))
+            sorted_total_counts[label_name] = total_label_counts_id[eid]
     
     return render_template(
         'training_report.html', 
@@ -143,5 +205,6 @@ def training_report(run_id):
         model_type=model_type,
         model_display_name=model_display_names.get(model_type, model_type),
         is_yolo=is_yolo,
-        used_audios=used_audios
+        used_audios=used_audios,
+        total_label_counts=sorted_total_counts if upload_ids else {}
     )

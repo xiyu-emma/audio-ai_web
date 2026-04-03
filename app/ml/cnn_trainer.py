@@ -2,6 +2,7 @@ import os
 import shutil
 import random
 import json
+from datetime import datetime
 import numpy as np
 from collections import defaultdict
 from flask import current_app
@@ -142,7 +143,75 @@ class CnnTrainer:
             
             model = model.to(device)
             
-            criterion = nn.CrossEntropyLoss()
+            import torch.nn.functional as F
+            class MultiClassFocalLoss(nn.Module):
+                def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
+                    super(MultiClassFocalLoss, self).__init__()
+                    self.gamma = gamma
+                    self.alpha = alpha
+                    self.reduction = reduction
+
+                def forward(self, inputs, targets):
+                    ce_loss = F.cross_entropy(inputs, targets, reduction='none', weight=self.alpha)
+                    pt = torch.exp(-ce_loss)
+                    focal_loss = ((1 - pt) ** self.gamma) * ce_loss
+                    if self.reduction == 'mean':
+                        return focal_loss.mean()
+                    elif self.reduction == 'sum':
+                        return focal_loss.sum()
+                    return focal_loss
+            
+            class BinaryFocalLoss(nn.Module):
+                def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
+                    super(BinaryFocalLoss, self).__init__()
+                    self.gamma = gamma
+                    self.alpha = alpha
+                    self.reduction = reduction
+
+                def forward(self, inputs, targets):
+                    num_classes = inputs.size(1)
+                    targets_one_hot = F.one_hot(targets, num_classes=num_classes).float()
+                    bce_loss = F.binary_cross_entropy_with_logits(
+                        inputs, targets_one_hot, reduction='none', pos_weight=self.alpha
+                    )
+                    pt = torch.exp(-bce_loss)
+                    focal_loss = ((1 - pt) ** self.gamma) * bce_loss
+                    if self.reduction == 'mean':
+                        return focal_loss.mean()
+                    elif self.reduction == 'sum':
+                        return focal_loss.sum()
+                    return focal_loss
+            
+            # 根據訓練參數選擇損失函數
+            loss_function_name = train_params.get('loss_function', 'cross_entropy')
+            
+            # 為了向後相容，如果收到舊版的 use_focal_loss，則套用 multi_class
+            if train_params.get('use_focal_loss'):
+                loss_function_name = 'focal_loss_multi_class'
+
+            if loss_function_name in ['focal_loss_multi_class', 'focal_loss_binary']:
+                # 計算類別權重 (反比於該類別在中樣本數量)
+                class_counts = [0] * num_classes
+                for _, label in train_dataset.samples:
+                    class_counts[label] += 1
+                
+                total_samples = sum(class_counts)
+                class_weights = []
+                for count in class_counts:
+                    weight = total_samples / (num_classes * count) if count > 0 else 0.0
+                    class_weights.append(weight)
+                    
+                class_weights_tensor = torch.FloatTensor(class_weights).to(device)
+                
+                if loss_function_name == 'focal_loss_multi_class':
+                    print(f"--- [CNN 訓練任務 #{training_run_id}] 啟用 Multi-class Focal Loss ---")
+                    criterion = MultiClassFocalLoss(alpha=class_weights_tensor, gamma=2.0)
+                else:
+                    print(f"--- [CNN 訓練任務 #{training_run_id}] 啟用 Binary Focal Loss ---")
+                    criterion = BinaryFocalLoss(alpha=class_weights_tensor, gamma=2.0)
+            else:
+                criterion = nn.CrossEntropyLoss()
+                
             optimizer = optim.Adam(model.parameters(), lr=learning_rate)
             
             # 4. 訓練迴圈
@@ -285,9 +354,13 @@ class CnnTrainer:
             plt.close()
             
             # 9. 儲存指標
+            now = datetime.now()
+            duration_sec = (now - training_run.timestamp.replace(tzinfo=None)).total_seconds() if training_run.timestamp else 0
             metrics_dict = {
                 'accuracy_top1': round(best_acc, 4),
-                'per_class_list': per_class_list
+                'per_class_list': per_class_list,
+                'end_time': now.strftime('%Y-%m-%d %H:%M:%S'),
+                'duration_seconds': round(duration_sec, 1)
             }
             training_run.metrics = json.dumps(metrics_dict)
             training_run.results_path = os.path.join('training_runs', str(training_run_id), 'train_results')
