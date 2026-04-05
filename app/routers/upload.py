@@ -163,7 +163,7 @@ def import_excel():
             spec_f_min = float(params.get('f_min', 0))
             
             spec_type = params.get('spec_type', 'mel')
-            if spec_type == 'yamnet_log_mel':
+            if spec_type in ['mel', 'yamnet_log_mel']:
                 spec_f_min = 125.0
                 spec_f_max = 7500.0
                 

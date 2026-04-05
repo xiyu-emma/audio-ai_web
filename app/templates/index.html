@@ -78,8 +78,7 @@
         <div class="form-group">
             <label for="spec_type">頻譜圖類型</label>
             <select id="spec_type" name="spec_type">
-                <option value="mel">Mel Spectrogram (梅爾頻譜)</option>
-                <option value="yamnet_log_mel">YAMNet Log Mel</option>
+                <option value="yamnet_log_mel">Mel Spectrogram</option>
                 <option value="stft">STFT (短時距傅立葉)</option>
                 <option value="classic_demon">DEMON 二維頻譜圖</option>
                 <option value="envelope_spectrum">包絡線頻譜分析</option>
@@ -103,10 +102,10 @@
             <div class="params-content" id="specParamsContent">
                 <p class="params-description" id="paramsDescription">調整頻譜分析的進階參數，可影響頻譜圖的解析度與精確度。</p>
 
-                <!-- FFT Window Size & Hop Length - 適用於 mel, stft -->
-                <div class="param-row" data-spec-types="mel,stft,yamnet_log_mel"
+                <!-- FFT Window Size & Hop Length - 適用於 stft -->
+                <div class="param-row" data-spec-types="yamnet_log_mel,stft"
                     style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                    <div class="form-group" data-spec-types="mel,stft">
+                    <div class="form-group" data-spec-types="stft">
                         <label for="n_fft">FFT Window Size (n_fft)</label>
                         <select id="n_fft" name="n_fft">
                             <option value="256">256</option>
@@ -117,7 +116,7 @@
                         </select>
                         <span class="param-hint">較大值提供更高頻率解析度，但時間解析度較低</span>
                     </div>
-                    <div class="form-group" data-spec-types="mel,stft,yamnet_log_mel">
+                    <div class="form-group" data-spec-types="yamnet_log_mel,stft">
                         <label for="window_overlap">Window Overlap (窗口重疊率 %)</label>
                         <input type="number" id="window_overlap" name="window_overlap" value="50" min="0" max="99"
                             step="1">
@@ -125,8 +124,8 @@
                     </div>
                 </div>
 
-                <!-- Window Type - 適用於 mel, stft -->
-                <div class="param-row" data-spec-types="mel,stft"
+                <!-- Window Type - 適用於 stft -->
+                <div class="param-row" data-spec-types="stft"
                     style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                     <div class="form-group">
                         <label for="window_type">Window Type (窗函數)</label>
@@ -141,20 +140,8 @@
                         <span class="param-hint">不同窗函數影響頻譜洩漏特性</span>
                     </div>
 
-                    <!-- n_mels - 僅適用於 mel -->
-                    <div class="form-group" data-spec-types="mel">
-                        <label for="n_mels">Mel 濾波器數量(n_mels)</label>
-                        <select id="n_mels" name="n_mels">
-                            <option value="40">40</option>
-                            <option value="64">64</option>
-                            <option value="80">80</option>
-                            <option value="128" selected>128</option>
-                            <option value="256">256</option>
-                        </select>
-                        <span class="param-hint">影響 Mel 頻率軸解析度</span>
-                    </div>
-                    <!-- Power - 適用於 mel 和 stft -->
-                    <div class="form-group" data-spec-types="mel,stft">
+                    <!-- Power - 適用於 stft -->
+                    <div class="form-group" data-spec-types="stft">
                         <label for="power">功率指數</label>
                         <select id="power" name="power">
                             <option value="1.0">1.0 (幅度頻譜)</option>
@@ -164,21 +151,7 @@
                     </div>
                 </div>
 
-                <!-- 頻率範圍 - 適用於 mel -->
-                <div class="param-row" data-spec-types="mel"
-                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                    <div class="form-group">
-                        <label for="f_min">最低頻率 (Hz)</label>
-                        <input type="number" id="f_min" name="f_min" value="0" min="0" step="10">
-                        <span class="param-hint">頻譜分析的最低頻率範圍</span>
-                    </div>
-                    <div class="form-group">
-                        <label for="f_max">最高頻率 (Hz)</label>
-                        <input type="number" id="f_max" name="f_max" value="0" min="0" step="100"
-                            placeholder="預設為 sample_rate / 2">
-                        <span class="param-hint">設為 0 表示使用 Nyquist 頻率</span>
-                    </div>
-                </div>
+
 
                 <!-- 無可調整參數的提示 - 適用於 classic_demon, envelope_spectrum -->
                 <div class="param-row no-params-notice"
@@ -307,9 +280,8 @@
 
     // 頻譜類型對應的說明文字
     const specTypeDescriptions = {
-        'mel': '調整 Mel 頻譜圖的進階參數，影響頻譜圖的解析度與精確度。',
+        'yamnet_log_mel': '使用固定參數 (16kHz, 64 Mel bands) 進行特徵提取，您可以調整窗口重疊率。',
         'stft': '調整短時距傅立葉頻譜的進階參數。',
-        'yamnet_log_mel': 'YAMNet 使用固定參數 (16kHz, 64 Mel bands)，但您可以調整窗口重疊率。',
         'classic_demon': 'DEMON 頻譜使用預設參數 (2-7.5kHz 帶通濾波)。',
         'envelope_spectrum': '包絡線頻譜使用預設參數進行分析。'
     };

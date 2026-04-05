@@ -31,34 +31,36 @@ class YAMNetParams:
     tflite_compatible: bool = False
 
 def waveform_to_log_mel_spectrogram_patches(waveform, params):
-    if not tf.is_tensor(waveform):
-        waveform = tf.convert_to_tensor(waveform, dtype=tf.float32)
+    # 強制在 CPU 上執行，避免多行程式中出現 CUDA_ERROR_INVALID_HANDLE
+    with tf.device('/CPU:0'):
+        if not tf.is_tensor(waveform):
+            waveform = tf.convert_to_tensor(waveform, dtype=tf.float32)
 
-    with tf.name_scope('log_mel_features'):
-        window_length_samples = int(round(params.sample_rate * params.stft_window_seconds))
-        hop_length_samples = int(round(params.sample_rate * params.stft_hop_seconds))
-        fft_length = 2 ** int(np.ceil(np.log(window_length_samples) / np.log(2.0)))
-        num_spectrogram_bins = fft_length // 2 + 1
-        
-        # 計算幅度頻譜圖 (TFLite 相容性分支已移除，因為邏輯相同)
-        magnitude_spectrogram = tf.abs(tf.signal.stft(
-            signals=waveform,
-            frame_length=window_length_samples,
-            frame_step=hop_length_samples,
-            fft_length=fft_length))
-
-        linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
-            num_mel_bins=params.mel_bands,
-            num_spectrogram_bins=num_spectrogram_bins,
-            sample_rate=params.sample_rate,
-            lower_edge_hertz=params.mel_min_hz,
-            upper_edge_hertz=params.mel_max_hz)
+        with tf.name_scope('log_mel_features'):
+            window_length_samples = int(round(params.sample_rate * params.stft_window_seconds))
+            hop_length_samples = int(round(params.sample_rate * params.stft_hop_seconds))
+            fft_length = 2 ** int(np.ceil(np.log(window_length_samples) / np.log(2.0)))
+            num_spectrogram_bins = fft_length // 2 + 1
             
-        mel_spectrogram = tf.matmul(
-            magnitude_spectrogram, linear_to_mel_weight_matrix)
-        log_mel_spectrogram = tf.math.log(mel_spectrogram + params.log_offset)
+            # 計算幅度頻譜圖 (TFLite 相容性分支已移除，因為邏輯相同)
+            magnitude_spectrogram = tf.abs(tf.signal.stft(
+                signals=waveform,
+                frame_length=window_length_samples,
+                frame_step=hop_length_samples,
+                fft_length=fft_length))
 
-        return log_mel_spectrogram
+            linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
+                num_mel_bins=params.mel_bands,
+                num_spectrogram_bins=num_spectrogram_bins,
+                sample_rate=params.sample_rate,
+                lower_edge_hertz=params.mel_min_hz,
+                upper_edge_hertz=params.mel_max_hz)
+                
+            mel_spectrogram = tf.matmul(
+                magnitude_spectrogram, linear_to_mel_weight_matrix)
+            log_mel_spectrogram = tf.math.log(mel_spectrogram + params.log_offset)
+
+            return log_mel_spectrogram
 
 # --- DEMON 參數與輔助函式 ---
 
@@ -117,38 +119,25 @@ def save_spectrogram(y, sr, out_path_display, out_path_training, spec_type='mel'
     
     # 分流處理特殊圖形
     if spec_type == 'classic_demon':
-        save_classic_demon_plot(y, sr, out_path_display, out_path_training)
+        save_classic_demon_plot(y, sr, out_path_display, out_path_training, spec_params)
         return
     elif spec_type == 'envelope_spectrum':
-        save_envelope_spectrum_plot(y, sr, out_path_display, out_path_training)
+        save_envelope_spectrum_plot(y, sr, out_path_display, out_path_training, spec_params)
         return
     elif spec_type == 'yamnet_log_mel':
         save_yamnet_log_mel_plot(y, sr, out_path_display, out_path_training, spec_params)
         return
 
-    # 標準 STFT / MEL 處理
+    # 標準 STFT 處理
     fig = None
     try:
         fig, ax = plt.subplots(figsize=(6, 4))
         
-        if spec_type == 'mel':
-            S = librosa.feature.melspectrogram(
-                y=y, sr=sr, 
-                n_fft=n_fft,
-                hop_length=hop_length,
-                win_length=n_fft,
-                window=window_type,
-                n_mels=n_mels, 
-                fmin=f_min,
-                fmax=f_max,
-                power=power
-            )
-            if power == 1.0:
-                S_db = librosa.amplitude_to_db(S, ref=np.max)
-            else:
-                S_db = librosa.power_to_db(S, ref=np.max)
-            display_data = S_db
-        elif spec_type == 'stft':
+        time_str = ""
+        if 'time_start' in spec_params and 'time_end' in spec_params:
+            time_str = f" ({spec_params['time_start']:.1f}s - {spec_params['time_end']:.1f}s)"
+        
+        if spec_type == 'stft':
             D = librosa.stft(
                 y, 
                 n_fft=n_fft, 
@@ -167,14 +156,9 @@ def save_spectrogram(y, sr, out_path_display, out_path_training, spec_type='mel'
         specshow_kwargs = {
             'sr': sr,
             'x_axis': 'time',
-            'ax': ax
+            'ax': ax,
+            'y_axis': 'hz'
         }
-        if spec_type == 'mel':
-            specshow_kwargs['y_axis'] = 'mel'
-            specshow_kwargs['fmin'] = f_min
-            specshow_kwargs['fmax'] = f_max
-        else:
-            specshow_kwargs['y_axis'] = 'hz'
 
         # 預防 Matplotlib 繪製極度密集的數據矩陣時引發 OOM (Signal 9 SIGKILL)
         # 對時間軸進行 Max Pooling 降採樣
@@ -188,7 +172,7 @@ def save_spectrogram(y, sr, out_path_display, out_path_training, spec_type='mel'
 
         # 1. 繪製顯示用圖 (包含座標軸與標題)
         librosa.display.specshow(display_data, **specshow_kwargs)
-        ax.set_title(f'{spec_type.capitalize()} Spectrogram')
+        ax.set_title(f'STFT Spectrogram{time_str}')
         fig.colorbar(ax.collections[0], ax=ax, format='%+2.0f dB')
         plt.tight_layout()
         plt.savefig(out_path_display, dpi=100)
@@ -239,7 +223,11 @@ def save_yamnet_log_mel_plot(y, sr, out_path_display, out_path_training, spec_pa
             ax=ax,
             cmap='viridis'
         )
-        ax.set_title("YAMNet Log Mel Spectrogram")
+        
+        time_str = ""
+        if spec_params and 'time_start' in spec_params and 'time_end' in spec_params:
+            time_str = f" ({spec_params['time_start']:.1f}s - {spec_params['time_end']:.1f}s)"
+        ax.set_title(f"Mel Spectrogram{time_str}")
         fig.colorbar(img, ax=ax, format='%+2.0f dB')
         plt.tight_layout()
         plt.savefig(out_path_display, dpi=100)
@@ -262,7 +250,7 @@ def save_yamnet_log_mel_plot(y, sr, out_path_display, out_path_training, spec_pa
         if fig: plt.close(fig)
         plt.close('all')
 
-def save_classic_demon_plot(segment, sr, out_path_display, out_path_training):
+def save_classic_demon_plot(segment, sr, out_path_display, out_path_training, spec_params=None):
     fig = None
     try:
         params = CLASSIC_DEMON_PARAMS
@@ -284,7 +272,11 @@ def save_classic_demon_plot(segment, sr, out_path_display, out_path_training):
         ax.set_ylim(0, params['FREQ_YLIM'])
         ax.set_ylabel('Modulation Frequency (Hz)')
         ax.set_xlabel('Time (s)')
-        ax.set_title("Classic DEMON Spectrogram (2D)")
+        
+        time_str = ""
+        if spec_params and 'time_start' in spec_params and 'time_end' in spec_params:
+            time_str = f" ({spec_params['time_start']:.1f}s - {spec_params['time_end']:.1f}s)"
+        ax.set_title(f"Classic DEMON Spectrogram (2D){time_str}")
         fig.colorbar(ax.collections[0], ax=ax, label='Amplitude (dB)')
         plt.tight_layout()
         plt.savefig(out_path_display, dpi=100)
@@ -300,7 +292,7 @@ def save_classic_demon_plot(segment, sr, out_path_display, out_path_training):
         if fig: plt.close(fig)
         plt.close('all')
 
-def save_envelope_spectrum_plot(segment, sr, out_path_display, out_path_training):
+def save_envelope_spectrum_plot(segment, sr, out_path_display, out_path_training, spec_params=None):
     fig = None
     try:
         nyquist = sr / 2
@@ -321,7 +313,11 @@ def save_envelope_spectrum_plot(segment, sr, out_path_display, out_path_training
         
         fig, ax = plt.subplots(figsize=(6, 4))
         ax.plot(xf_positive, yf_positive)
-        ax.set_title('Envelope Spectrum (DEMON 1D)')
+        
+        time_str = ""
+        if spec_params and 'time_start' in spec_params and 'time_end' in spec_params:
+            time_str = f" ({spec_params['time_start']:.1f}s - {spec_params['time_end']:.1f}s)"
+        ax.set_title(f'Envelope Spectrum (DEMON 1D){time_str}')
         ax.set_xlabel('Modulation Frequency (Hz)')
         ax.set_ylabel('Magnitude')
         ax.grid(True)
@@ -436,6 +432,11 @@ def process_large_audio(filepath, result_dir, spec_type, segment_duration=2.0, o
             
             # 4. 繪製頻譜圖 (這裡最耗記憶體)
             mono_segment = y_segment
+            if spec_params is None:
+                spec_params = {}
+            spec_params['time_start'] = start_s
+            spec_params['time_end'] = start_s + segment_duration
+            
             save_spectrogram(mono_segment, sr, display_spec_path, training_spec_path, spec_type, spec_params)
             
             # 5. 加入結果列表
