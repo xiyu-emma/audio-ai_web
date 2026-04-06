@@ -149,6 +149,7 @@ def training_report(run_id):
             14: '14. sin型 (Sine)',
             15: '15. 嘎搭聲 (Click)',
             16: '16. 突發脈衝聲 (Burst)',
+            17: '17. 常數型 (Constant)',
             90: '90. 環境噪音 (Noise)',
             91: '91. 船舶 (Ship)',
             92: '92. 風機打樁 (Piling)'

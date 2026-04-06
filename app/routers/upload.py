@@ -105,7 +105,7 @@ def import_excel():
     LABEL_TO_EVENT_TYPE = {
         'whale': 1, 'unknown': 0, 'whale_upsweep': 10, 'whale_downsweep': 11,
         'whale_concave': 12, 'whale_convex': 13, 'whale_sine': 14, 'whale_click': 15,
-        'whale_burst': 16, 'noise': 90, 'ship': 91, 'piling': 92
+        'whale_burst': 16, 'whale_constant': 17, 'noise': 90, 'ship': 91, 'piling': 92
     }
     default_event_type = LABEL_TO_EVENT_TYPE.get(default_label, 0)
     
