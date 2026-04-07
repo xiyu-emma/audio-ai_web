@@ -274,7 +274,11 @@ font-size: 0.8rem;
                 <span class="color-dot" style="background: #2563eb;"></span>
                 鯨魚 (Whale)
             </button>
-            <button type="button" class="label-btn active" data-label="whale_upsweep" data-color="#3b82f6">
+            <button type="button" class="label-btn active" data-label="whale_unknown" data-color="#64748b">
+                <span class="color-dot" style="background: #64748b;"></span>
+                未知聲紋 (Unknown)
+            </button>
+            <button type="button" class="label-btn" data-label="whale_upsweep" data-color="#3b82f6">
                 <span class="color-dot" style="background: #3b82f6;"></span>
                 上升型 (Upsweep)
             </button>
@@ -363,6 +367,7 @@ font-size: 0.8rem;
     // 標籤顯示名稱
     const LABEL_NAMES = {
         'whale': '鯨魚 (Whale)',
+        'whale_unknown': '未知聲紋 (Unknown Vocalization)',
         'whale_upsweep': '上升型 (Upsweep)',
         'whale_downsweep': '下降型 (Downsweep)',
         'whale_concave': 'U型 (Concave)',
@@ -375,7 +380,7 @@ font-size: 0.8rem;
         'piling': '打樁 (Piling)'
     };
 
-    let currentLabel = 'whale_upsweep';
+    let currentLabel = 'whale_unknown';
     let boxes = []; // { label, x, y, width, height }
     let isDrawing = false;
     let startX = 0, startY = 0;

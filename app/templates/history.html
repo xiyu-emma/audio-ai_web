@@ -185,13 +185,20 @@
                         </div>
                         <div class="form-row" id="loss-function-group" style="margin-top: 1rem;">
                             <div class="form-group" style="grid-column: 1 / -1;">
-                                <label for="loss_function">損失函數 (Loss Function)</label>
-                                <select id="loss_function" name="loss_function">
-                                    <option value="cross_entropy" selected>標準 Cross Entropy</option>
-                                    <option value="focal_loss_multi_class">Multi-class Focal Loss (處理資料不平衡)</option>
-                                    <option value="focal_loss_binary">Binary Focal Loss (各類別獨立判定)</option>
-                                </select>
-                                <small style="color: #666; display: block; margin-top: 4px;">適用於類別樣本數量差距過大時。此設定目前僅在 CNN 模型中生效。</small>
+                                <label>Focal Loss (損失函數設定)</label>
+                                <div style="margin-top: 0.5rem; display: flex; gap: 1.5rem;" id="loss_checkbox_container">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input type="checkbox" id="chk_focal_binary" onclick="toggleLoss('binary')"> 
+                                        Binary Focal Loss
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input type="checkbox" id="chk_focal_multi" onclick="toggleLoss('multi')"> 
+                                        Multi-class Focal Loss
+                                    </label>
+                                    <input type="hidden" name="loss_function" id="hidden_loss_function" value="cross_entropy">
+                                </div>
+                                <div id="loss_description" style="color: #0369a1; background: #e0f2fe; padding: 8px 12px; border-radius: 4px; margin-top: 10px; font-size: 0.9rem; border: 1px solid #bae6fd; display: none;"></div>
+                                <small style="color: #666; display: block; margin-top: 6px;">適用於類別樣本數量差距過大時。此設定目前僅在 CNN 模型中生效，YOLO 模型不可用。</small>
                             </div>
                         </div>
                     </div>
@@ -218,16 +225,17 @@
                     <label for="importLabelSelect" style="font-weight: 600; margin-bottom: 0.75rem; display: block;">請選擇要套用的標籤</label>
                     <select id="importLabelSelect" class="form-select" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
                         <option value="whale" selected>1. 鯨魚 (Whale)</option>
-                        <option value="unknown">0. 未知</option>
+                        <option value="unknown">0. 無標籤</option>
                         <optgroup label="鯨豚聲紋">
-                            <option value="whale_upsweep">10. 上升型 (Upsweep)</option>
-                            <option value="whale_downsweep">11. 下降型 (Downsweep)</option>
-                            <option value="whale_concave">12. U型 (Concave)</option>
-                            <option value="whale_convex">13. 倒U型 (Convex)</option>
-                            <option value="whale_sine">14. sin型 (Sine)</option>
-                            <option value="whale_click">15. 嘎搭聲 (Click)</option>
-                            <option value="whale_burst">16. 突發脈衝聲 (Burst)</option>
-                            <option value="whale_constant">17. 常數型 (Constant)</option>
+                            <option value="whale_unknown">10. 未知聲紋 (Unknown Vocalization)</option>
+                            <option value="whale_upsweep">11. 上升型 (Upsweep)</option>
+                            <option value="whale_downsweep">12. 下降型 (Downsweep)</option>
+                            <option value="whale_concave">13. U型 (Concave)</option>
+                            <option value="whale_convex">14. 倒U型 (Convex)</option>
+                            <option value="whale_sine">15. sin型 (Sine)</option>
+                            <option value="whale_click">16. 嘎搭聲 (Click)</option>
+                            <option value="whale_burst">17. 突發脈衝聲 (Burst)</option>
+                            <option value="whale_constant">18. 常數型 (Constant)</option>
                         </optgroup>
                         <optgroup label="環境與干擾">
                             <option value="noise">90. 環境噪音 (Noise)</option>
@@ -280,6 +288,12 @@
         ).join('');
 
         document.getElementById('training-modal').classList.add('active');
+        
+        // 預設觸發一次以更新 loss function 的可用狀態
+        const selectedOption = document.querySelector('.model-option.selected');
+        if(selectedOption) {
+            selectModel(selectedOption);
+        }
     }
 
     // 關閉訓練設定彈窗
@@ -291,6 +305,67 @@
     function selectModel(element) {
         document.querySelectorAll('.model-option').forEach(opt => opt.classList.remove('selected'));
         element.classList.add('selected');
+        
+        const radio = element.querySelector('input[type="radio"]');
+        if (radio) {
+            radio.checked = true;
+            const modelType = radio.value;
+            const lossGroup = document.getElementById('loss-function-group');
+            const chkBinary = document.getElementById('chk_focal_binary');
+            const chkMulti = document.getElementById('chk_focal_multi');
+            const hiddenLoss = document.getElementById('hidden_loss_function');
+            const lossDesc = document.getElementById('loss_description');
+            
+            if (modelType.startsWith('yolo')) {
+                if(chkBinary) chkBinary.disabled = true;
+                if(chkMulti) chkMulti.disabled = true;
+                if(chkBinary) chkBinary.checked = false;
+                if(chkMulti) chkMulti.checked = false;
+                if(hiddenLoss) hiddenLoss.value = 'cross_entropy';
+                if(lossDesc) lossDesc.style.display = 'none';
+                if(lossGroup) {
+                    lossGroup.style.opacity = '0.5';
+                    lossGroup.style.pointerEvents = 'none';
+                }
+            } else {
+                if(chkBinary) chkBinary.disabled = false;
+                if(chkMulti) chkMulti.disabled = false;
+                if(lossGroup) {
+                    lossGroup.style.opacity = '1';
+                    lossGroup.style.pointerEvents = 'auto';
+                }
+            }
+        }
+    }
+
+    // Focal Loss Checkbox 切換邏輯
+    function toggleLoss(type) {
+        const chkBinary = document.getElementById('chk_focal_binary');
+        const chkMulti = document.getElementById('chk_focal_multi');
+        const hiddenLoss = document.getElementById('hidden_loss_function');
+        const lossDesc = document.getElementById('loss_description');
+        
+        if (type === 'binary') {
+            if (chkBinary.checked) {
+                chkMulti.checked = false;
+                hiddenLoss.value = 'focal_loss_binary';
+                lossDesc.innerHTML = '👉 <strong>Binary Focal Loss</strong>：各類別獨立判定，用於將每個類別當成2分類問題（是/否），增強對稀有特徵的敏感度。';
+                lossDesc.style.display = 'block';
+            } else {
+                hiddenLoss.value = 'cross_entropy';
+                lossDesc.style.display = 'none';
+            }
+        } else if (type === 'multi') {
+            if (chkMulti.checked) {
+                chkBinary.checked = false;
+                hiddenLoss.value = 'focal_loss_multi_class';
+                lossDesc.innerHTML = '👉 <strong>Multi-class Focal Loss</strong>：處理資料不平衡，用於多類別分類（類別之間互斥），主要增強模型對稀有類別的關注。';
+                lossDesc.style.display = 'block';
+            } else {
+                hiddenLoss.value = 'cross_entropy';
+                lossDesc.style.display = 'none';
+            }
+        }
     }
 
     // 點擊 Modal 外部關閉
