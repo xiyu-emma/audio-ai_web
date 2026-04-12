@@ -206,6 +206,8 @@ class CnnTrainer:
                         return focal_loss.sum()
                     return focal_loss
             
+
+
             # 根據訓練參數選擇損失函數
             loss_function_name = train_params.get('loss_function', 'cross_entropy')
             
@@ -213,7 +215,10 @@ class CnnTrainer:
             if train_params.get('use_focal_loss'):
                 loss_function_name = 'focal_loss_multi_class'
 
-            if loss_function_name in ['focal_loss_multi_class', 'focal_loss_binary']:
+            if loss_function_name == 'none' or loss_function_name == 'cross_entropy':
+                print(f"--- [CNN 訓練任務 #{training_run_id}] 啟用 Cross Entropy Loss ---")
+                criterion = nn.CrossEntropyLoss()
+            elif loss_function_name in ['focal_loss_multi_class', 'focal_loss_binary']:
                 # 計算類別權重 (反比於該類別在中樣本數量)
                 class_counts = [0] * num_classes
                 for _, label in train_dataset.samples:
@@ -234,6 +239,7 @@ class CnnTrainer:
                     print(f"--- [CNN 訓練任務 #{training_run_id}] 啟用 Binary Focal Loss ---")
                     criterion = BinaryFocalLoss(alpha=class_weights_tensor, gamma=2.0)
             else:
+                print(f"--- [CNN 訓練任務 #{training_run_id}] 啟用 Cross Entropy Loss ---")
                 criterion = nn.CrossEntropyLoss()
                 
             optimizer = optim.Adam(model.parameters(), lr=learning_rate)

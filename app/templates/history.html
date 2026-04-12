@@ -185,20 +185,22 @@
                         </div>
                         <div class="form-row" id="loss-function-group" style="margin-top: 1rem;">
                             <div class="form-group" style="grid-column: 1 / -1;">
-                                <label>Focal Loss (損失函數設定)</label>
+                                <label>Loss Function (損失函數設定)</label>
                                 <div style="margin-top: 0.5rem; display: flex; gap: 1.5rem;" id="loss_checkbox_container">
                                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                        <input type="checkbox" id="chk_focal_binary" onclick="toggleLoss('binary')"> 
+                                        <input type="radio" name="loss_function" value="cross_entropy" id="chk_cross_entropy" onclick="toggleLoss('ce')" checked> 
+                                        Cross Entropy
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input type="radio" name="loss_function" value="focal_loss_binary" id="chk_focal_binary" onclick="toggleLoss('binary')"> 
                                         Binary Focal Loss
                                     </label>
                                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                        <input type="checkbox" id="chk_focal_multi" onclick="toggleLoss('multi')"> 
+                                        <input type="radio" name="loss_function" value="focal_loss_multi_class" id="chk_focal_multi" onclick="toggleLoss('multi')"> 
                                         Multi-class Focal Loss
                                     </label>
-                                    <input type="hidden" name="loss_function" id="hidden_loss_function" value="cross_entropy">
                                 </div>
-                                <div id="loss_description" style="color: #0369a1; background: #e0f2fe; padding: 8px 12px; border-radius: 4px; margin-top: 10px; font-size: 0.9rem; border: 1px solid #bae6fd; display: none;"></div>
-                                <small style="color: #666; display: block; margin-top: 6px;">適用於類別樣本數量差距過大時。此設定目前僅在 CNN 模型中生效，YOLO 模型不可用。</small>
+                                <div id="loss_description" style="color: #0369a1; background: #e0f2fe; padding: 8px 12px; border-radius: 4px; margin-top: 10px; font-size: 0.9rem; border: 1px solid #bae6fd;"><strong>Cross Entropy Loss</strong>：標準交叉熵損失函數，適用於大多數分類任務。</div>
                             </div>
                         </div>
                     </div>
@@ -311,28 +313,37 @@
             radio.checked = true;
             const modelType = radio.value;
             const lossGroup = document.getElementById('loss-function-group');
+            const chkCe = document.getElementById('chk_cross_entropy');
             const chkBinary = document.getElementById('chk_focal_binary');
             const chkMulti = document.getElementById('chk_focal_multi');
-            const hiddenLoss = document.getElementById('hidden_loss_function');
             const lossDesc = document.getElementById('loss_description');
             
             if (modelType.startsWith('yolo')) {
+                if(chkCe) chkCe.disabled = true;
                 if(chkBinary) chkBinary.disabled = true;
                 if(chkMulti) chkMulti.disabled = true;
+                if(chkCe) chkCe.checked = false;
                 if(chkBinary) chkBinary.checked = false;
                 if(chkMulti) chkMulti.checked = false;
-                if(hiddenLoss) hiddenLoss.value = 'cross_entropy';
                 if(lossDesc) lossDesc.style.display = 'none';
                 if(lossGroup) {
                     lossGroup.style.opacity = '0.5';
                     lossGroup.style.pointerEvents = 'none';
                 }
             } else {
+                if(chkCe) chkCe.disabled = false;
                 if(chkBinary) chkBinary.disabled = false;
                 if(chkMulti) chkMulti.disabled = false;
                 if(lossGroup) {
                     lossGroup.style.opacity = '1';
                     lossGroup.style.pointerEvents = 'auto';
+                }
+                
+                if(chkCe && !chkCe.checked && !chkBinary.checked && !chkMulti.checked) {
+                    chkCe.checked = true;
+                    toggleLoss('ce');
+                } else if(lossDesc) {
+                    lossDesc.style.display = 'block';
                 }
             }
         }
@@ -340,31 +351,17 @@
 
     // Focal Loss Checkbox 切換邏輯
     function toggleLoss(type) {
-        const chkBinary = document.getElementById('chk_focal_binary');
-        const chkMulti = document.getElementById('chk_focal_multi');
-        const hiddenLoss = document.getElementById('hidden_loss_function');
         const lossDesc = document.getElementById('loss_description');
         
-        if (type === 'binary') {
-            if (chkBinary.checked) {
-                chkMulti.checked = false;
-                hiddenLoss.value = 'focal_loss_binary';
-                lossDesc.innerHTML = '👉 <strong>Binary Focal Loss</strong>：各類別獨立判定，用於將每個類別當成2分類問題（是/否），增強對稀有特徵的敏感度。';
-                lossDesc.style.display = 'block';
-            } else {
-                hiddenLoss.value = 'cross_entropy';
-                lossDesc.style.display = 'none';
-            }
+        if (type === 'ce') {
+            lossDesc.innerHTML = '<strong>Cross Entropy Loss</strong>：標準交叉熵損失函數，適用於大多數分類任務。';
+            lossDesc.style.display = 'block';
+        } else if (type === 'binary') {
+            lossDesc.innerHTML = '<strong>Binary Focal Loss</strong>：各類別獨立判定，用於將每個類別當成2分類問題（是/否），增強對稀有特徵的敏感度。';
+            lossDesc.style.display = 'block';
         } else if (type === 'multi') {
-            if (chkMulti.checked) {
-                chkBinary.checked = false;
-                hiddenLoss.value = 'focal_loss_multi_class';
-                lossDesc.innerHTML = '👉 <strong>Multi-class Focal Loss</strong>：處理資料不平衡，用於多類別分類（類別之間互斥），主要增強模型對稀有類別的關注。';
-                lossDesc.style.display = 'block';
-            } else {
-                hiddenLoss.value = 'cross_entropy';
-                lossDesc.style.display = 'none';
-            }
+            lossDesc.innerHTML = '<strong>Multi-class Focal Loss</strong>：處理資料不平衡，用於多類別分類（類別之間互斥），主要增強模型對稀有類別的關注。';
+            lossDesc.style.display = 'block';
         }
     }
 
