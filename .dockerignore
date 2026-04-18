@@ -1,0 +1,14 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+venv
+.venv
+app/static/uploads
+app/static/results
+app/static/training_runs
+mysql_data

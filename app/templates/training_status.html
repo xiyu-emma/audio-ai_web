@@ -163,6 +163,31 @@ to { background-position: 0 0; }
 
     // --- 動態進度條邏輯 (Auto Polling) ---
     document.addEventListener('DOMContentLoaded', () => {
+        // 連續勾選邏輯 (支援 Shift / Ctrl)
+        let lastCheckedRun = null;
+        const runCheckboxes = document.querySelectorAll('.run-checkbox');
+        runCheckboxes.forEach(cb => {
+            cb.addEventListener('click', function(e) {
+                if (!lastCheckedRun) {
+                    lastCheckedRun = this;
+                    return;
+                }
+                if (e.shiftKey || e.ctrlKey) {
+                    let start = Array.from(runCheckboxes).indexOf(this);
+                    let end = Array.from(runCheckboxes).indexOf(lastCheckedRun);
+                    let isChecked = this.checked;
+                    
+                    let min = Math.min(start, end);
+                    let max = Math.max(start, end);
+                    
+                    for (let i = min; i <= max; i++) {
+                        runCheckboxes[i].checked = isChecked;
+                    }
+                }
+                lastCheckedRun = this;
+            });
+        });
+
         const activeIntervals = new Map();
         const configDiv = document.getElementById('data-config');
         const newRunId = configDiv ? configDiv.dataset.newRunId : null;
